@@ -1,0 +1,52 @@
+/* Wordle 棋盤 */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 6), 1fr);
+  gap: 5px;
+  width: 100%;
+  max-width: 330px;
+}
+
+.tile {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.5rem, 7vw, 2rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  user-select: none;
+  /* 翻轉動畫使用 3D 視角 */
+  perspective: 600px;
+}
+
+.tile[data-state="empty"]   { border-color: var(--border); }
+.tile[data-state="filled"]  { border-color: var(--border-active); }
+
+.tile[data-state="correct"] {
+  background: var(--color-correct);
+  border-color: var(--color-correct);
+  color: #FFFFFF;
+}
+.tile[data-state="present"] {
+  background: var(--color-present);
+  border-color: var(--color-present);
+  color: #FFFFFF;
+}
+.tile[data-state="absent"] {
+  background: var(--color-absent);
+  border-color: var(--color-absent);
+  color: #FFFFFF;
+}

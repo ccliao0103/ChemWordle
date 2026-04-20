@@ -1,0 +1,112 @@
+/* ChemWordle 基礎樣式
+ * 配色與字體見 SPEC §配色 §字體
+ */
+
+:root {
+  /* 基本色 */
+  --bg: #FFFFFF;
+  --text: #1A1A1B;
+  --text-secondary: #787C7E;
+  --border: #D3D6DA;
+  --border-active: #878A8C;
+
+  /* Wordle 顏色 */
+  --color-correct: #6AAA64;
+  --color-present: #C9B458;
+  --color-absent: #787C7E;
+
+  /* 鍵盤 */
+  --key-bg: #D3D6DA;
+  --key-text: #1A1A1B;
+  --key-bg-active: #878A8C;
+
+  /* 版型 */
+  --header-h: 56px;
+  --content-max: 640px;
+
+  /* 字體 */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+               "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#page-root {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+a { color: inherit; text-decoration: underline; }
+a:hover { opacity: 0.8; }
+
+button { font-family: inherit; cursor: pointer; }
+
+h1, h2, h3 { font-weight: 700; line-height: 1.2; margin: 0; }
+
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.875em; }
+
+.hidden { display: none !important; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); border: 0;
+}
+
+.text-muted { color: var(--text-secondary); }
+.text-center { text-align: center; }
+
+/* 通用按鈕 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  background: var(--text);
+  color: var(--bg);
+  border: 2px solid var(--text);
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.05s ease, opacity 0.15s ease;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+}
+.btn-secondary:hover { background: #F5F5F5; opacity: 1; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-block { width: 100%; }
+
+.stack > * + * { margin-top: 0.5rem; }
+.stack-md > * + * { margin-top: 1rem; }
+.stack-lg > * + * { margin-top: 1.5rem; }

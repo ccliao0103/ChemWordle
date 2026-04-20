@@ -1,0 +1,29 @@
+/* 動畫 */
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 字母輸入:pop 100ms */
+@keyframes pop {
+  0%   { transform: scale(0.8); }
+  40%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.anim-pop { animation: pop 100ms ease-out; }
+
+/* 顏色翻轉:flip 600ms,tile 每格 delay 於 JS 控制 */
+@keyframes flip-in {
+  0%   { transform: rotateX(0deg); }
+  50%  { transform: rotateX(-90deg); }
+  100% { transform: rotateX(0deg); }
+}
+.tile.anim-flip { animation: flip-in 600ms ease; }
+
+/* 無效輸入:shake 300ms */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+.anim-shake { animation: shake 300ms; }

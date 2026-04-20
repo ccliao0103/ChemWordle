@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Vite cache
+.vite/
+
+# Local config (包含真實 Supabase URL 與 anon key)
+public/config.local.js
+
+# Env files(此專案走 config.local.js,但仍防止誤 commit)
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# 臨時檔
+*.tmp
+*.swp
+
+# 字典原始檔(透過 scripts/generate-words-sql.js 重建即可,不佔 git 空間)
+scripts/data/
+# 產出的 seed SQL(可選;若要 CI/CD 自動部署字典可拿掉這行保留 commit)
+scripts/seed-words.sql

@@ -1,0 +1,57 @@
+/* 虛擬鍵盤 */
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 1rem 0.25rem;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.kbd-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.kbd-key {
+  flex: 1;
+  min-width: 28px;
+  height: 54px;
+  background: var(--key-bg);
+  color: var(--key-text);
+  border: 0;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.05s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.kbd-key-wide {
+  flex: 1.5;
+  font-size: 0.8125rem;
+  letter-spacing: 0.05em;
+}
+
+.kbd-key[data-state="correct"] { background: var(--color-correct); color: #FFFFFF; }
+.kbd-key[data-state="present"] { background: var(--color-present); color: #FFFFFF; }
+.kbd-key[data-state="absent"]  { background: var(--color-absent);  color: #FFFFFF; }
+
+.kbd-key:active { transform: scale(0.95); }
+.kbd-key:focus-visible { outline: 2px solid var(--border-active); outline-offset: 2px; }
+
+@media (max-width: 420px) {
+  .kbd-key { height: 48px; font-size: 1rem; min-width: 22px; }
+  .kbd-key-wide { font-size: 0.75rem; }
+}
