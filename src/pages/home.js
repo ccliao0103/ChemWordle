@@ -15,7 +15,7 @@ export async function render(container /* , params */) {
     <div class="home-hero">
       <h1>ChemWordle</h1>
       <p>每天一題化學英文 Wordle</p>
-      <p class="event-period">活動期間:即日起 — 2026 / 6 / 30</p>
+      <p class="event-period">活動期間:2026 / 5 / 1 — 2026 / 6 / 30</p>
     </div>
 
     <div class="home-cta">
@@ -64,6 +64,7 @@ export async function render(container /* , params */) {
             </ol>
           </li>
           <li>換電腦 / 換瀏覽器 / 清掉 cookies → 需要重新收信登入</li>
+          <li>⚠️ <strong>若網頁無回應</strong>:按 <strong>F5</strong>(電腦)或下拉重新整理(手機)就會恢復</li>
         </ul>
       </details>
 
@@ -79,7 +80,7 @@ export async function render(container /* , params */) {
             </ul>
           </li>
           <li>同分比較順序:總分 → 答對次數 → 平均猜測次數</li>
-          <li>排行榜學號中段遮罩(如 <code>412***678</code>),保護隱私</li>
+          <li>排行榜以<strong>姓名 + 身分</strong>(如「化三甲」「碩士」「教職員」)顯示,不外露學號</li>
         </ul>
       </details>
 

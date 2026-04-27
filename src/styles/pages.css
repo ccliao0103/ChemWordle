@@ -266,7 +266,11 @@
   padding: 1rem;
 }
 .modal-backdrop.show { opacity: 1; }
-.modal-backdrop.fade-out { opacity: 0; }
+.modal-backdrop.fade-out {
+  opacity: 0;
+  /* 關鍵:fade-out 期間關掉滑鼠攔截,避免 200ms 動畫殘留期讓使用者覺得「點不到」 */
+  pointer-events: none;
+}
 
 .modal {
   background: var(--bg);

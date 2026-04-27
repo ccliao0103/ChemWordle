@@ -27,10 +27,15 @@ export function showModal({ title, body, closeText = '知道了' } = {}) {
       closed = true;
       root.classList.remove('show');
       root.classList.add('fade-out');
+      // 主清理:200ms 動畫結束後移除
       setTimeout(() => {
-        root.remove();
+        if (root.parentNode) root.remove();
         document.removeEventListener('keydown', onKeydown);
       }, 200);
+      // 安全網:不論發生什麼事,2 秒後一定要移除(防止背景分頁後計時器走鐘)
+      setTimeout(() => {
+        if (root.parentNode) root.remove();
+      }, 2000);
       resolve();
     }
     function onKeydown(e) {
