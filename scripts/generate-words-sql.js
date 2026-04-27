@@ -1,15 +1,10 @@
 #!/usr/bin/env node
-// 從 scripts/data/words6.txt 產生 scripts/seed-words.sql。
+// 從 scripts/data/wordsN.txt 產生 scripts/seed-words-N.sql。
 //
-// scripts/data/words6.txt 是純文字檔,每行一個大寫 6 字英文字。
-// 本腳本產生:
-//   - CREATE TABLE valid_words(word text primary key) IF NOT EXISTS
-//   - 多筆 batched INSERT(每批 2000 字,約 6~8 個 statement),
-//     ON CONFLICT DO NOTHING 讓你可重複執行不報錯
-//
-// 執行方式:
-//   node scripts/generate-words-sql.js
-// 完成後:用 Supabase SQL Editor 開 scripts/seed-words.sql 整個貼上跑一次
+// 用法:
+//   node scripts/generate-words-sql.js          # 預設產 6 字字典
+//   node scripts/generate-words-sql.js 5        # 產 5 字字典
+//   node scripts/generate-words-sql.js 6        # 產 6 字字典(明示)
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -18,34 +13,44 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const SRC = resolve(ROOT, 'scripts/data/words6.txt');
-const OUT = resolve(ROOT, 'scripts/seed-words.sql');
+const len = parseInt(process.argv[2] || '6', 10);
+if (!Number.isFinite(len) || len < 3 || len > 10) {
+  console.error(`[gen-sql] ✗ 字長參數無效:${process.argv[2]}`);
+  process.exit(1);
+}
+
+const SRC = resolve(ROOT, `scripts/data/words${len}.txt`);
+const OUT = resolve(ROOT, `scripts/seed-words-${len}.sql`);
 const BATCH_SIZE = 2000;
 
 const raw = readFileSync(SRC, 'utf8');
+const re = new RegExp(`^[A-Z]{${len}}$`);
 const words = raw
   .split(/\r?\n/)
   .map((s) => s.trim().toUpperCase())
-  .filter((s) => /^[A-Z]{6}$/.test(s));
+  .filter((s) => re.test(s));
 
 const unique = Array.from(new Set(words)).sort();
-console.log(`[gen-sql] 從 ${words.length} 行讀到 ${unique.length} 個唯一 6 字英文詞`);
+console.log(`[gen-sql] ${len} 字 — 從 ${words.length} 行讀到 ${unique.length} 個唯一詞`);
 
 const lines = [];
-lines.push('-- ChemWordle 字典:有效猜測詞清單');
-lines.push(`-- 從 ENABLE 字典 (Public Domain) 抽出 6 字英文詞,共 ${unique.length} 個`);
+lines.push(`-- ChemWordle 字典:有效猜測詞清單(${len} 字)`);
+lines.push(`-- 從 ENABLE 字典 (Public Domain) 抽出 ${len} 字英文詞,共 ${unique.length} 個`);
 lines.push(`-- 由 scripts/generate-words-sql.js 自動產生,請勿手動編輯`);
 lines.push(`-- 在 Supabase SQL Editor 整個貼上執行;可重複跑(ON CONFLICT DO NOTHING)`);
 lines.push('');
 lines.push('-- ─────────────────────────');
-lines.push('-- 1) 建立資料表');
+lines.push('-- 1) 確保資料表存在(若已存在會 no-op)');
 lines.push('-- ─────────────────────────');
 lines.push('create table if not exists public.valid_words (');
-lines.push('  word text primary key check (length(word) = 6 and word = upper(word))');
+lines.push('  word text primary key');
 lines.push(');');
 lines.push('');
-lines.push('-- 啟用 RLS,但不建立任何 policy → 一般 client 無法 SELECT');
-lines.push('-- (RPC 用 security definer 跨過 RLS 做存在性檢查就好)');
+lines.push('-- 寬鬆長度約束:支援 4–10 字(若舊約束 length=6 存在,先 drop)');
+lines.push('alter table public.valid_words drop constraint if exists valid_words_word_check;');
+lines.push('alter table public.valid_words add constraint valid_words_word_check');
+lines.push('  check (length(word) between 4 and 10 and word = upper(word));');
+lines.push('');
 lines.push('alter table public.valid_words enable row level security;');
 lines.push('');
 lines.push('-- ─────────────────────────');
@@ -69,8 +74,9 @@ lines.push('');
 lines.push('-- ─────────────────────────');
 lines.push('-- 3) 驗證');
 lines.push('-- ─────────────────────────');
-lines.push('select count(*) as total_words from public.valid_words;');
-lines.push(`-- 預期:${unique.length}`);
+lines.push(`select count(*) filter (where length(word) = ${len}) as count_${len}_letter,`);
+lines.push('       count(*) as total_in_dict');
+lines.push('from public.valid_words;');
 lines.push('');
 
 writeFileSync(OUT, lines.join('\n'), 'utf8');
