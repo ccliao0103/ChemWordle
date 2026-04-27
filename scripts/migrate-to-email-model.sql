@@ -44,8 +44,9 @@ alter table public.students
   add column if not exists class_tag text;
 
 -- 唯一限制(email 不可重複)
-alter table public.students
-  add constraint if not exists students_email_unique unique (email);
+-- 注意:PostgreSQL 不支援 `add constraint IF NOT EXISTS`,所以先 drop 再 add
+alter table public.students drop constraint if exists students_email_unique;
+alter table public.students add constraint students_email_unique unique (email);
 
 -- 分類檢查
 alter table public.students
