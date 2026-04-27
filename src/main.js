@@ -218,6 +218,17 @@ async function main() {
   initToast(document.getElementById('toast-root'));
   mountHeader(document.getElementById('header-root'));
   initRouter(document.getElementById('page-root'));
+
+  // 6. 第一次進站秀 How to Play modal(localStorage 記錄看過後就不再自動秀)
+  //    auth-callback 頁面跳過(剛收信進來,不要打擾流程)
+  if (!window.location.hash.startsWith('#/auth-callback')) {
+    import('./components/howto-modal.js').then(({ shouldShowHowTo, showHowToModal }) => {
+      if (shouldShowHowTo()) {
+        // 延遲一點,讓頁面先 render,再彈 modal
+        setTimeout(() => showHowToModal(), 400);
+      }
+    });
+  }
 }
 
 main();

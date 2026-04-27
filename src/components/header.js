@@ -36,6 +36,10 @@ async function render() {
       </a>
       <h1 class="hdr-title">ChemWordle</h1>
       <div class="hdr-right">
+        <button type="button" class="hdr-help"
+                data-action="show-howto"
+                aria-label="How to play / 怎麼玩"
+                title="How to play">?</button>
         ${user ? renderUserMenu(name) : renderLoginButton()}
       </div>
     </div>
@@ -83,7 +87,7 @@ function bindEventsOnce() {
   // _hostEl 是持久元素,只需綁定一次。render 會重建內部 DOM,事件用 delegation。
   if (_bound) return;
   _bound = true;
-  _hostEl.addEventListener('click', (ev) => {
+  _hostEl.addEventListener('click', async (ev) => {
     const actionEl = ev.target.closest('[data-action]');
     if (!actionEl) return;
     const action = actionEl.dataset.action;
@@ -94,8 +98,13 @@ function bindEventsOnce() {
       // 先導航回首頁,讓 UI 即時反應
       navigate('/');
       // signOut 在背景跑:清本地 session(scope='local' 不打伺服器,不會卡)
-      // 失敗就 log,不阻塞 UX
       signOut().catch((err) => console.warn('[header] signOut failed:', err));
+    } else if (action === 'show-howto') {
+      ev.preventDefault();
+      const { showHowToModal } = await import('./howto-modal.js');
+      // 點 ❓ 開的不算「初次」,不寫 localStorage(下次首訪還是會自動秀)
+      // 已經看過的人才會點 ❓ — 讓他們複習,但不影響「首次」邏輯
+      showHowToModal({ markSeen: false });
     }
   });
 }

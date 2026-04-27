@@ -272,6 +272,8 @@
   background: var(--bg);
   max-width: 480px;
   width: 100%;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -324,6 +326,84 @@
   padding: 0.75rem;
   background: #F5F5F5;
   border-radius: 6px;
+}
+
+/* ── How to Play modal ───────── */
+.howto-content { font-size: 0.9375rem; line-height: 1.55; }
+.howto-content .zh {
+  color: var(--text-secondary);
+  font-size: 0.875em;
+  display: inline-block;
+  margin-top: 0.15rem;
+}
+.howto-lead {
+  font-size: 1rem;
+  margin: 0 0 1rem;
+}
+.howto-rules {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+}
+.howto-rules li {
+  margin: 0.5rem 0;
+}
+.howto-h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25rem;
+}
+.howto-example {
+  margin: 1rem 0 0.75rem;
+}
+.howto-example p {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  line-height: 1.5;
+}
+.howto-tiles {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin: 0.5rem 0;
+}
+.tile.demo {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.tile.demo.correct {
+  background: var(--color-correct);
+  border-color: var(--color-correct);
+  color: #fff;
+}
+.tile.demo.present {
+  background: var(--color-present);
+  border-color: var(--color-present);
+  color: #fff;
+}
+.tile.demo.absent {
+  background: var(--color-absent);
+  border-color: var(--color-absent);
+  color: #fff;
+}
+.howto-footer {
+  margin: 1.25rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 /* ── Toast ────────────────── */
