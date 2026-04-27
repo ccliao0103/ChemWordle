@@ -1,19 +1,40 @@
--- ChemWordle migration 修補
--- 起因:原 migrate-to-email-model.sql 使用了 PostgreSQL 不支援的
---       `add constraint if not exists` 語法,導致整段 SQL 在那一行 abort,
---       後續的 constraint 與 trigger 重寫沒跑到 → 註冊報「Database error saving new user」
+-- ChemWordle migration 完整修補版(idempotent,從任何狀態跑都能到達正確終點)
 --
--- 用法:整段複製貼到 Supabase SQL Editor → Run。idempotent,可重複執行。
+-- 用法:整段複製貼到 Supabase SQL Editor → Run
+--
+-- 起因:原 migrate-to-email-model.sql 用了 PostgreSQL 不支援的
+--       `add constraint if not exists`,在某行就 abort,後續 schema 變更
+--       沒跑到。本檔重來一次,用正確語法 + 全部 idempotent。
+--
+-- 此檔做的事:
+--   1) 清空 students / attempts / guess_sessions(daily_puzzles 與字典保留)
+--   2) 確保 students 欄位齊全(email / role_category / year_tag / class_tag)
+--   3) 重新加 constraints(用 drop+add 達成 idempotent)
+--   4) 重寫 handle_new_user trigger 並重新綁定
+--   5) 驗證
 
--- ───────────────────────────────────────────
--- 1) 補上唯一約束(用 drop+add 達成 idempotent)
--- ───────────────────────────────────────────
+
+-- ─── 1) 清資料 ───────────────────────────
+-- pilot 資料若有 attempts / guess_sessions 都會清掉(沒就 no-op)
+truncate public.attempts restart identity cascade;
+truncate public.guess_sessions restart identity cascade;
+delete from public.students;
+
+
+-- ─── 2) Schema ───────────────────────────
+alter table public.students alter column student_id drop not null;
+
+alter table public.students
+  add column if not exists email text,
+  add column if not exists role_category text,
+  add column if not exists year_tag text,
+  add column if not exists class_tag text;
+
+
+-- ─── 3) Constraints(用 drop+add 達成可重跑) ───
 alter table public.students drop constraint if exists students_email_unique;
 alter table public.students add constraint students_email_unique unique (email);
 
--- ───────────────────────────────────────────
--- 2) 補上 check constraints
--- ───────────────────────────────────────────
 alter table public.students drop constraint if exists students_role_category_check;
 alter table public.students add constraint students_role_category_check
   check (role_category in ('undergrad', 'master', 'phd', 'staff'));
@@ -26,9 +47,8 @@ alter table public.students drop constraint if exists students_class_tag_check;
 alter table public.students add constraint students_class_tag_check
   check (class_tag is null or class_tag in ('甲', '乙'));
 
--- ───────────────────────────────────────────
--- 3) 重新安裝 trigger function(CREATE OR REPLACE 是 idempotent)
--- ───────────────────────────────────────────
+
+-- ─── 4) 重寫 handle_new_user trigger ───────
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -95,27 +115,23 @@ begin
 end;
 $function$;
 
--- ───────────────────────────────────────────
--- 4) 重新綁 trigger
--- ───────────────────────────────────────────
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- ───────────────────────────────────────────
--- 5) 驗證:確認 students 欄位齊全
--- ───────────────────────────────────────────
+
+-- ─── 5) 驗證 ─────────────────────────────
+-- A. students 欄位
 select column_name, data_type, is_nullable
 from information_schema.columns
 where table_schema = 'public' and table_name = 'students'
 order by ordinal_position;
--- 預期看到:id / student_id (nullable) / name / role / class_name /
---          email / role_category / year_tag / class_tag / created_at / updated_at
+-- 預期看到 11 欄(順序可能不同):
+--   id, student_id (YES nullable), name, role, class_name,
+--   email, role_category, year_tag, class_tag, created_at, updated_at
 
--- ───────────────────────────────────────────
--- 6) 驗證:trigger 存在
--- ───────────────────────────────────────────
+-- B. trigger 存在
 select tgname, tgrelid::regclass
 from pg_trigger
 where tgname = 'on_auth_user_created';
