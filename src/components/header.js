@@ -34,7 +34,6 @@ async function render() {
         <img class="hdr-logo-img" src="/logo.png" alt="ChemWordle" />
         <span class="hdr-logo-text">ChemWordle</span>
       </a>
-      <h1 class="hdr-title">ChemWordle</h1>
       <div class="hdr-right">
         <button type="button" class="hdr-help"
                 data-action="show-howto"

@@ -40,6 +40,15 @@ html, body {
   font-family: var(--font-sans);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* 關掉手機的「快速兩擊放大」(double-tap zoom)
+     仍保留雙指 pinch zoom,符合無障礙標準。
+     這也順便消除 iOS 點擊延遲。 */
+  touch-action: manipulation;
+}
+
+/* 按鈕、tile 額外強調(避免 user-agent 預設覆蓋) */
+button, a, input, .tile, .kbd-key {
+  touch-action: manipulation;
 }
 
 #app {
