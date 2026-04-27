@@ -1,19 +1,17 @@
 // Page: 月排行榜 #/leaderboard
 //
 // 進入呼叫 get_monthly_leaderboard(),拿:
-//   { month, top: [{rank, student_no, name, total_score, attend_days, solved_count, avg_guess_count}],
+//   { month, top: [{rank, class_name, name, total_score, attend_days, solved_count, avg_guess_count}],
 //     my_rank: {rank, total_score, attend_days, solved_count} | null }
 // 顯示:
 //   - 標題:「YYYY 年 M 月排行榜」
 //   - 「我的排名」突出區塊(my_rank 不為 null 時)
-//   - 前 10 名表格(學號中段遮罩)
+//   - 前 10 名表格(顯示班別 tag 如「化三甲」)
 //   - 若我在前 10 名,該列加亮 (.is-me)
-//
-// TODO:目前後端不回傳 role,排行榜暫不顯示「(教師)」標記。
 
 import { getMonthlyLeaderboard } from '../api.js';
 import { createSpinner } from '../components/spinner.js';
-import { maskStudentNo, formatMonthZh, escapeHtml } from '../utils.js';
+import { formatMonthZh, escapeHtml } from '../utils.js';
 
 export async function render(container /* , params */) {
   container.innerHTML = '';
@@ -89,7 +87,7 @@ function renderTopTable(top, myRank) {
       <tr class="${isMe ? 'is-me' : ''}">
         <td>${row.rank}</td>
         <td>${escapeHtml(row.name || '—')}</td>
-        <td><code>${escapeHtml(maskStudentNo(row.student_no))}</code></td>
+        <td><span class="class-tag">${escapeHtml(row.class_name || '—')}</span></td>
         <td>${row.total_score ?? 0}</td>
         <td>${row.attend_days ?? 0}</td>
         <td>${row.solved_count ?? 0}</td>
@@ -103,7 +101,7 @@ function renderTopTable(top, myRank) {
         <tr>
           <th>排名</th>
           <th>姓名</th>
-          <th>學號</th>
+          <th>身分</th>
           <th>總分</th>
           <th>出席</th>
           <th>答對</th>

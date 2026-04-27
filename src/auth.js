@@ -1,40 +1,47 @@
 // 認證封裝
 //
-// 只用 Magic Link(signInWithOtp),沒有密碼。
-// Email 是從學號推導出來的:${studentId}@${EMAIL_DOMAIN}。
+// Magic Link 模式,無密碼。Email 由使用者自由填(任何信箱),不再從學號推導。
+//
+// 註冊 metadata 包含:
+//   - name (text, 必填)
+//   - role_category ('undergrad' | 'master' | 'phd' | 'staff', 必填)
+//   - year_tag ('化一'|'化二'|'化三'|'化四', undergrad 必填)
+//   - class_tag ('甲'|'乙', undergrad 必填)
+//   - student_id (text, 可選 — 兌獎時方便比對身分)
+//
+// trigger handle_new_user 讀取上述欄位,寫入 students 表並計算 class_name 顯示 tag。
 
 import { getSupabase } from './supabase-client.js';
 
-/**
- * 由學號推出 email。
- */
-export function emailFromStudentId(studentId) {
-  return `${studentId}@${window.CONFIG.EMAIL_DOMAIN}`;
-}
-
-/**
- * Magic Link 的回調 URL,會帶到信件裡。
- */
 export function authCallbackUrl() {
   return `${window.CONFIG.SITE_URL}/#/auth-callback`;
 }
 
 /**
- * 註冊(第一次登入,需帶 metadata)。
- * @param {{ studentId: string, name: string, role: 'student'|'teacher' }} args
+ * 註冊(第一次)。Email 直接傳,不再從學號推導。
+ * @param {{
+ *   email: string,
+ *   name: string,
+ *   roleCategory: 'undergrad'|'master'|'phd'|'staff',
+ *   yearTag?: string,
+ *   classTag?: string,
+ *   studentId?: string
+ * }} args
  */
-export async function signUpWithMagicLink({ studentId, name, role }) {
+export async function signUpWithMagicLink(args) {
   const supabase = getSupabase();
-  const email = emailFromStudentId(studentId);
+  const { email, name, roleCategory, yearTag, classTag, studentId } = args;
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: true,
       emailRedirectTo: authCallbackUrl(),
       data: {
-        student_id: studentId,
         name,
-        role
+        role_category: roleCategory,
+        year_tag: yearTag || null,
+        class_tag: classTag || null,
+        student_id: studentId || null
       }
     }
   });
@@ -43,11 +50,10 @@ export async function signUpWithMagicLink({ studentId, name, role }) {
 }
 
 /**
- * 已註冊者登入(不帶 metadata)。
+ * 已註冊者登入。只要 email,不需 metadata。
  */
-export async function signInWithMagicLink({ studentId }) {
+export async function signInWithMagicLink({ email }) {
   const supabase = getSupabase();
-  const email = emailFromStudentId(studentId);
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
@@ -60,11 +66,7 @@ export async function signInWithMagicLink({ studentId }) {
 }
 
 /**
- * 登出。
- * 預設 scope='local' — 只清瀏覽器 localStorage 的 session,不打伺服器。
- *   好處:沒有網路 round-trip,UI 不會卡。即使網路有問題也能登出。
- *   代價:該 refresh token 理論上還有 30 天內可被重用(實際要拿到它才行,風險低)。
- * 若要 server-side 失效所有 device,改呼叫 signOut({ scope: 'global' })。
+ * 登出(預設 scope='local',只清本地 session,UI 不會卡)。
  */
 export async function signOut({ scope = 'local' } = {}) {
   const supabase = getSupabase();
@@ -72,11 +74,6 @@ export async function signOut({ scope = 'local' } = {}) {
   if (error) throw error;
 }
 
-/**
- * 取得當前 Supabase Auth user 物件(非 students profile)。
- * - 未登入回 null
- * - 登入時回 { id, email, user_metadata: { student_id, name, role }, ... }
- */
 export async function getCurrentUser() {
   const supabase = getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -88,8 +85,7 @@ export async function isAuthenticated() {
 }
 
 /**
- * 取當前使用者的顯示名稱。
- * 優先用 user_metadata.name(註冊時存的),退一步用 email local part。
+ * 取當前使用者顯示名稱。
  */
 export async function getCurrentUserName() {
   const user = await getCurrentUser();
@@ -98,8 +94,7 @@ export async function getCurrentUserName() {
 }
 
 /**
- * 監聽認證狀態變化(SIGNED_IN / SIGNED_OUT / TOKEN_REFRESHED ...)。
- * 回傳 subscription,呼叫方需要時用 subscription.unsubscribe() 取消。
+ * 監聽認證狀態變化。回傳 subscription,可呼叫 unsubscribe()。
  */
 export function onAuthStateChange(callback) {
   const supabase = getSupabase();

@@ -46,6 +46,16 @@ export async function submitGuess(guess) {
 // ─────────────────────────────────────────────
 
 /**
+ * 取昨日題目揭曉資訊(含中文)。需要登入。
+ * 回傳 { puzzle_date, answer, zh_name, zh_description } 或 null(昨天沒排題)
+ */
+export async function getYesterdayReveal() {
+  const { data, error } = await getSupabase().rpc('get_yesterday_puzzle_reveal');
+  if (error) throw error;
+  return data;
+}
+
+/**
  * 取我的本月統計。
  * @param {string|null} month 'YYYY-MM-01',不傳 = 當月
  */

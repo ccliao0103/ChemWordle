@@ -31,6 +31,55 @@
 .form-hint  { font-size: 0.8125rem; color: var(--text-secondary); margin: 0.35rem 0 0; }
 .form-error { font-size: 0.8125rem; color: #C62828; margin: 0.35rem 0 0; }
 
+.req { color: #C62828; font-weight: bold; }
+
+/* Radio group(註冊頁的「身分」「年級」「班別」)*/
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.radio-group label {
+  cursor: pointer;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-weight: normal;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9375rem;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.radio-group label:hover {
+  background: #F5F5F5;
+}
+.radio-group input[type="radio"] {
+  margin: 0;
+  accent-color: var(--text);
+}
+.radio-group label:has(input[type="radio"]:checked) {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+/* 排行榜身分 tag */
+.class-tag {
+  display: inline-block;
+  padding: 0.1em 0.5em;
+  background: #EFF6FF;
+  color: #1E40AF;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-weight: 600;
+}
+
 /* ── 卡片 ─────────────────── */
 .card {
   border: 1px solid var(--border);
@@ -119,6 +168,78 @@
   margin-top: 1rem;
 }
 
+.event-period {
+  margin: 0.5rem 0 0 !important;
+  color: var(--color-correct) !important;
+  font-weight: 600;
+  font-size: 0.9375rem !important;
+}
+
+/* ── 首頁:須知 ──────────── */
+.home-notes {
+  max-width: 560px;
+  margin: 2.5rem auto 1rem;
+  padding: 0 0.5rem;
+}
+.home-notes details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg);
+}
+.home-notes details[open] {
+  background: #FAFAFA;
+}
+.home-notes summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.25rem 0;
+  list-style: none;
+}
+.home-notes summary::-webkit-details-marker { display: none; }
+.home-notes summary::before {
+  content: '▸';
+  display: inline-block;
+  width: 1em;
+  transition: transform 0.15s ease;
+  color: var(--text-secondary);
+}
+.home-notes details[open] summary::before {
+  transform: rotate(90deg);
+}
+.home-notes ul, .home-notes ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.5rem;
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 0.9375rem;
+}
+.home-notes ul ul, .home-notes ul ol {
+  margin-top: 0.25rem;
+  font-size: 1em;
+}
+.home-notes li { margin: 0.25rem 0; }
+.home-notes a { color: var(--color-correct); }
+.home-notes code {
+  background: #F0F0F0;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+
+/* 顏色 chip(用於規則說明) */
+.chip {
+  display: inline-block;
+  padding: 0.05em 0.45em;
+  border-radius: 3px;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.85em;
+}
+.chip-green  { background: var(--color-correct); }
+.chip-yellow { background: var(--color-present); }
+.chip-gray   { background: var(--color-absent); }
+
 /* ── 佔位:批次 3 stub ─────── */
 .stub-box {
   max-width: 560px;
@@ -130,6 +251,80 @@
 }
 .stub-box h2 { margin: 0 0 0.5rem; }
 .stub-box p  { margin: 0; color: var(--text-secondary); }
+
+/* ── Modal ────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 1rem;
+}
+.modal-backdrop.show { opacity: 1; }
+.modal-backdrop.fade-out { opacity: 0; }
+
+.modal {
+  background: var(--bg);
+  max-width: 480px;
+  width: 100%;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(12px);
+  transition: transform 0.2s ease;
+}
+.modal-backdrop.show .modal { transform: translateY(0); }
+
+.modal-title {
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+  font-weight: 700;
+}
+.modal-body {
+  color: var(--text);
+  line-height: 1.7;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+/* 昨日揭曉 modal 內容特別樣式 */
+.modal-body .reveal-date {
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+  font-size: 0.9375rem;
+  text-align: center;
+}
+.modal-body .reveal-word {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0.5rem 0;
+  color: var(--color-correct);
+  text-align: center;
+}
+.modal-body .reveal-zhname {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0.5rem 0 0.75rem;
+  text-align: center;
+}
+.modal-body .reveal-desc {
+  font-size: 0.9375rem;
+  color: var(--text);
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  background: #F5F5F5;
+  border-radius: 6px;
+}
 
 /* ── Toast ────────────────── */
 .toast-root {

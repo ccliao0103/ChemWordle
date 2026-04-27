@@ -1,16 +1,19 @@
 // Page: 遊戲主頁 #/game
 //
 // 進入流程:
+//   0. 若有昨天答案且還沒揭曉過 → 彈 modal 顯示(教學功能)
 //   1. get_today_puzzle_info → 拿 status(no_puzzle / completed / in_progress)
-//   2. 根據 status 分派三種 UI:
-//      - no_puzzle:  今日尚未開放
-//      - completed:  還原棋盤 + 顯示結果
-//      - in_progress:createGameEngine + 玩家輸入
+//   2. 根據 status 分派三種 UI
+//
+// 答案顯示政策(延遲揭曉):
+//   - 今天:無論猜中或猜錯,都不顯示答案
+//   - 明天一登入:modal 顯示昨天答案 + 中文翻譯
 
-import { getTodayPuzzle, submitGuess } from '../api.js';
+import { getTodayPuzzle, submitGuess, getYesterdayReveal } from '../api.js';
 import { createGameEngine } from '../game-engine.js';
 import { createBoard } from '../components/board.js';
 import { createSpinner } from '../components/spinner.js';
+import { showModal } from '../components/modal.js';
 import { translateGameError, escapeHtml } from '../utils.js';
 
 let _currentEngine = null; // 頁面切換時 destroy
@@ -24,6 +27,13 @@ export async function render(container /* , params */) {
 
   container.innerHTML = '';
   container.appendChild(createSpinner('載入今日題目中…'));
+
+  // Step 0:先看看有沒有昨天揭曉要秀(獨立失敗也不影響遊戲載入)
+  try {
+    await maybeShowYesterdayReveal();
+  } catch (e) {
+    console.warn('[game] yesterday reveal skipped:', e);
+  }
 
   let info;
   try {
@@ -54,6 +64,40 @@ export async function render(container /* , params */) {
 }
 
 // ─────────────────────────────────────────────
+// Step 0:昨日揭曉 modal
+// ─────────────────────────────────────────────
+const REVEALED_KEY_PREFIX = 'chemwordle:revealed:';
+
+async function maybeShowYesterdayReveal() {
+  let info;
+  try {
+    info = await getYesterdayReveal();
+  } catch (e) {
+    console.warn('[game] getYesterdayReveal failed:', e);
+    return;
+  }
+  if (!info || !info.answer) return; // 昨天沒排題
+
+  const key = REVEALED_KEY_PREFIX + info.puzzle_date;
+  if (localStorage.getItem(key)) return; // 看過了
+
+  const body = `
+    <p class="reveal-date">昨日(${escapeHtml(info.puzzle_date)})的答案是</p>
+    <p class="reveal-word">${escapeHtml(info.answer)}</p>
+    ${info.zh_name
+      ? `<p class="reveal-zhname">${escapeHtml(info.zh_name)}</p>`
+      : ''
+    }
+    ${info.zh_description
+      ? `<p class="reveal-desc">${escapeHtml(info.zh_description)}</p>`
+      : ''
+    }
+  `;
+  await showModal({ title: '📖 昨日揭曉', body, closeText: '開始今日挑戰' });
+  localStorage.setItem(key, '1');
+}
+
+// ─────────────────────────────────────────────
 // 狀態 1:今日無題
 // ─────────────────────────────────────────────
 function renderNoPuzzle(container, info) {
@@ -80,7 +124,6 @@ function renderCompleted(container, info) {
   const boardWrap = container.querySelector('#game-board-wrap');
   const resultEl = container.querySelector('#game-result');
 
-  // 重建棋盤並靜態畫上過去的猜測
   const board = createBoard({ rows: 6, cols: info.word_length });
   const guesses = info.guesses || [];
   for (let i = 0; i < guesses.length; i++) {
@@ -92,15 +135,12 @@ function renderCompleted(container, info) {
   const solved = !!info.solved;
   const score = info.score ?? 0;
   const guessCount = info.guess_count ?? guesses.length;
-  // backend completed 回傳沒有 answer 欄位時,solved=true 可從最後一次猜到答案
-  const lastWord = guesses[guesses.length - 1]?.word;
-  const answer = info.answer || (solved ? lastWord : null);
 
-  resultEl.innerHTML = renderResultBlock({ solved, guessCount, score, answer });
+  resultEl.innerHTML = renderResultBlock({ solved, guessCount, score });
 }
 
 // ─────────────────────────────────────────────
-// 狀態 3:進行中 / 還沒開始
+// 狀態 3:進行中
 // ─────────────────────────────────────────────
 function renderInProgress(container, info) {
   container.innerHTML = `
@@ -131,7 +171,7 @@ function renderInProgress(container, info) {
             colors: res.colors,
             solved: !!res.solved,
             score: res.score,
-            answer: res.answer,
+            // answer 不再使用(延遲揭曉)
             guessCount: res.guess_count
           };
         }
@@ -152,25 +192,24 @@ function renderInProgress(container, info) {
     endRoot.innerHTML = renderResultBlock({
       solved: !!result.solved,
       guessCount: result.guessCount ?? result.guess_count ?? 0,
-      score: result.score ?? 0,
-      answer: result.answer
+      score: result.score ?? 0
     });
   });
 }
 
 // ─────────────────────────────────────────────
-// 共用:結果區塊 HTML
+// 共用:結果區塊 HTML(延遲揭曉版 — 今日絕不顯示答案)
 // ─────────────────────────────────────────────
-function renderResultBlock({ solved, guessCount, score, answer }) {
+function renderResultBlock({ solved, guessCount, score }) {
   const mainLine = solved
     ? `🎉 第 ${guessCount} 次猜中,得 ${score} 分`
     : `未猜中,得 ${score} 分`;
-  const answerLine = !solved && answer
-    ? `<p>答案是 <span class="answer">${escapeHtml(answer)}</span></p>`
-    : '';
+  const subLine = solved
+    ? ''
+    : `<p class="text-muted" style="margin-top:0.5rem;">答案將於明天揭曉</p>`;
   return `
     <h2>${escapeHtml(mainLine)}</h2>
-    ${answerLine}
+    ${subLine}
     <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
       <a class="btn btn-secondary" href="#/stats">看我的成績</a>
       <a class="btn" href="#/leaderboard">看排行榜</a>

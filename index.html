@@ -6,6 +6,17 @@
   <meta name="theme-color" content="#FFFFFF" />
   <title>ChemWordle</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- iOS 加到主畫面的體驗優化
+       (注意:iOS PWA webview 與 Safari 的 localStorage 獨立,
+       這些 meta 只改善「外觀」,登入 session 仍不共享。
+       所以實際使用請以 Safari 書籤為主。) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ChemWordle" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
+  <meta name="description" content="每天一題化學英文 Wordle — 輔大化學系班級活動" />
 </head>
 <body>
   <div id="app"></div>
