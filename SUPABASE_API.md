@@ -3,47 +3,52 @@
 本文件描述後端所有可呼叫的 RPC 函式與認證流程。
 **前端只能使用以下 API,不可直接 SELECT / INSERT / UPDATE / DELETE 任何資料表。**
 
+> 最後更新:2026-04-27(email 註冊模式 + 5/6 字混合 + 訪客池 + 延遲揭曉)
+
 ---
 
 ## 認證流程(Supabase Auth + Magic Link)
 
-### Magic Link 註冊(第一次)
+從 v2(email 模式)開始,**email 由使用者自由填**(任何信箱),不再從學號推導。
+
+### 註冊(第一次)
 
 ```js
 const { error } = await supabase.auth.signInWithOtp({
-  email: `${studentId}@${EMAIL_DOMAIN}`,
+  email: userEmail,                 // 使用者自填的 email
   options: {
     shouldCreateUser: true,
     emailRedirectTo: `${SITE_URL}/#/auth-callback`,
     data: {
-      student_id: studentId,    // 字串,9 碼(學生)或 6 碼(教職員)
-      name: userName,            // 字串,至少 2 字元
-      role: roleType             // 'student' 或 'teacher'
+      name: userName,                // 必填,至少 2 字元
+      role_category: 'undergrad',    // 必填,'undergrad' | 'master' | 'phd' | 'staff'
+      year_tag: '化三',              // undergrad 必填,'化一'/'化二'/'化三'/'化四'
+      class_tag: '甲',               // undergrad 必填,'甲'/'乙'
+      student_id: '412345678'        // 可選,純文字,不限格式(兌獎時對身分用)
     }
   }
 });
-
-if (error) {
-  // 處理錯誤
-  // 常見:rate limit、email 格式錯誤
-}
 ```
 
-**注意**:
-- `data` 中的 `student_id`、`name`、`role` 會傳到 Supabase Auth metadata
-- 後端的 `handle_new_user` trigger 會在使用者第一次點 Magic Link 後讀取這些資料,並在 `students` 表建立 profile
-- 若 trigger 內驗證失敗(如學號格式錯、重複註冊),會 raise exception,使用者點連結會看到錯誤
-- 對應的錯誤訊息(後端 raise):
-  - `INVALID_STUDENT_ID`: 學生學號必須是 9 位數字
-  - `INVALID_TEACHER_ID`: 教職員編號必須是 6 位數字
-  - `INVALID_NAME`: 姓名至少需要 2 個字元
-  - `DUPLICATE_ID`: 此編號已註冊過,請直接登入
+**後端 trigger `handle_new_user` 會在使用者第一次點 Magic Link 後讀這些 metadata,寫入 `students` 表,並自動計算 `class_name` 顯示 tag**:
+- undergrad → `年級 + 班別`(如 `化三甲`)
+- master → `碩士`
+- phd → `博士`
+- staff → `教職員`
 
-### Magic Link 登入(已註冊)
+**對應的錯誤訊息**(後端 raise,前端從 `error.message` 解析):
+| 錯誤碼 | 中文訊息 |
+|---|---|
+| `INVALID_NAME` | 姓名至少需要 2 個字元 |
+| `INVALID_ROLE_CATEGORY` | 請選擇身分(大學部 / 碩士 / 博士 / 教職員)|
+| `INVALID_YEAR_TAG` | 大學部請選年級(化一 / 化二 / 化三 / 化四)|
+| `INVALID_CLASS_TAG` | 大學部請選班別(甲 / 乙)|
+
+### 登入(已註冊)
 
 ```js
 const { error } = await supabase.auth.signInWithOtp({
-  email: `${studentId}@${EMAIL_DOMAIN}`,
+  email: userEmail,
   options: {
     shouldCreateUser: false,
     emailRedirectTo: `${SITE_URL}/#/auth-callback`
@@ -51,29 +56,26 @@ const { error } = await supabase.auth.signInWithOtp({
 });
 ```
 
-**注意**:`shouldCreateUser: false`,且不需要傳 `data`。
+`shouldCreateUser: false`,不需要傳 `data`。
 
 ### 登出
 
 ```js
-await supabase.auth.signOut();
+await supabase.auth.signOut({ scope: 'local' });
+// scope='local' 只清本地 session,不打伺服器(UI 不會卡)
+// scope='global' 會 invalidate refresh token 在所有裝置
 ```
 
-### 取得當前使用者
+### 取得當前使用者 / 監聽認證變化
 
 ```js
 const { data: { user } } = await supabase.auth.getUser();
-// user 為 null 代表未登入
-// user.id 是 auth.users.id(uuid)
-// user.email 是註冊用的 email
-```
+// user.id = auth.users.id (uuid)
+// user.email = 註冊用的 email
+// user.user_metadata = { name, role_category, year_tag, class_tag, student_id }
 
-### 監聽認證狀態變化
-
-```js
 supabase.auth.onAuthStateChange((event, session) => {
-  // event: 'SIGNED_IN', 'SIGNED_OUT', 'TOKEN_REFRESHED' 等
-  // session 是當前的 session,登出時為 null
+  // event: 'SIGNED_IN' / 'SIGNED_OUT' / 'TOKEN_REFRESHED' ...
 });
 ```
 
@@ -83,7 +85,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 ### `get_today_puzzle_info()`
 
-取得今日題目狀態,前端開遊戲頁時呼叫。**不需要參數**。
+取得今日題目狀態。**需要登入**。**不需要參數**。
 
 ```js
 const { data, error } = await supabase.rpc('get_today_puzzle_info');
@@ -103,24 +105,26 @@ const { data, error } = await supabase.rpc('get_today_puzzle_info');
 ```json
 {
   "status": "completed",
-  "puzzle_date": "2026-04-17",
+  "puzzle_date": "2026-04-23",
   "word_length": 6,
   "guess_count": 3,
   "solved": true,
   "score": 80,
   "guesses": [
     { "word": "OXYGEN", "colors": ["green","gray","yellow","gray","gray","gray"] },
-    { "word": "ABCDEF", "colors": ["gray","gray","gray","gray","gray","gray"] },
+    { "word": "PROBES", "colors": ["gray","gray","gray","gray","gray","gray"] },
     { "word": "CARBON", "colors": ["green","green","green","green","green","green"] }
   ]
 }
 ```
 
+> **注意**:`completed` 回傳**不含** `answer` 欄位(延遲揭曉:今日不洩漏答案)。前端若要顯示「答案是 X」,只能在 `solved=true` 時用 `guesses.last().word`。
+
 #### 狀態 3:進行中(或還沒開始)
 ```json
 {
   "status": "in_progress",
-  "puzzle_date": "2026-04-17",
+  "puzzle_date": "2026-04-23",
   "word_length": 6,
   "guesses": []
 }
@@ -163,39 +167,54 @@ const { data, error } = await supabase.rpc('submit_guess', {
   "answer": null
 }
 ```
-**注意**:`answer` 只在 `solved=false` 時有值,猜中時為 null。
+
+> **延遲揭曉政策**:`answer` **永遠為 null**(不論 solved 與否)。猜中時前端從棋盤最後一列即可知道;失敗時不顯示,改寫「明日揭曉」文案。
 
 #### error
 ```json
 {
-  "error": "wrong_length",
-  "message": "必須是 6 個字母"
+  "error": "not_in_dictionary",
+  "message": "不是有效單字"
 }
 ```
 
-**所有可能的錯誤代碼**:
+**所有錯誤代碼**:
 | error | 中文訊息 | 場景 |
 |---|---|---|
 | `not_authenticated` | 請先登入 | 未登入 |
 | `no_puzzle_today` | 今日無題 | 今天沒排題 |
 | `invalid_chars` | 只能輸入英文字母 | 含中文/符號 |
-| `wrong_length` | 必須是 6 個字母 | 長度不對 |
+| `wrong_length` | 必須是 N 個字母(N 跟著當日題目)| 長度不對 |
+| `not_in_dictionary` | 不是有效單字 | 字典中沒有 |
 | `already_completed` | 今日已完成,明天再來 | 已寫入 attempts |
 | `max_attempts_reached` | 已用完 6 次 | session 已滿 |
 
-前端錯誤處理建議:
+> **`not_in_dictionary` 不佔用 6 次機會**:後端在字典檢查就 reject,不寫入 attempts/sessions。
+
+---
+
+### `get_yesterday_puzzle_reveal()` 🆕
+
+取得昨日題目揭曉資訊(含中英解釋)。**需要登入**。**不需要參數**。
+
 ```js
-const { data } = await supabase.rpc('submit_guess', { guess_input });
-if (data.error) {
-  showToast(data.message);
-  return;
-}
-if (data.status === 'continue') {
-  // 顯示顏色,等下一次
-} else if (data.status === 'finished') {
-  // 顯示結束畫面
+const { data, error } = await supabase.rpc('get_yesterday_puzzle_reveal');
+```
+
+**回傳**:
+```json
+{
+  "puzzle_date": "2026-04-22",
+  "answer": "PHENOL",
+  "zh_name": "苯酚",
+  "zh_description": "芳香族醇類,具殺菌性,也是許多合成材料的原料。",
+  "en_description": "An aromatic alcohol with antiseptic properties; raw material for many synthetics."
 }
 ```
+
+**昨日沒排題**:回傳 `null`。
+
+**前端用法**:進 `/game` 時呼叫,若有結果且 `localStorage[chemwordle:revealed:{puzzle_date}]` 沒值,彈 modal 顯示。
 
 ---
 
@@ -206,10 +225,8 @@ if (data.status === 'continue') {
 取得我的本月統計。**需要登入**。
 
 ```js
-// 不帶參數 = 當月
 const { data } = await supabase.rpc('get_my_monthly_stats');
-
-// 指定月份
+// 或指定月份:
 const { data } = await supabase.rpc('get_my_monthly_stats', {
   target_month: '2026-04-01'
 });
@@ -231,7 +248,7 @@ const { data } = await supabase.rpc('get_my_monthly_stats', {
 
 **欄位說明**:
 - `attend_days`:本月已提交天數
-- `active_days_so_far`:本月「已開放」的天數(用來算「5/7」這種顯示)
+- `active_days_so_far`:本月「已開放」的天數(算「5/7」這種顯示)
 - `played_today`:今天是否已完成
 
 ---
@@ -242,11 +259,7 @@ const { data } = await supabase.rpc('get_my_monthly_stats', {
 
 ```js
 const { data } = await supabase.rpc('get_monthly_leaderboard');
-
-// 自訂前 N 名
-const { data } = await supabase.rpc('get_monthly_leaderboard', {
-  top_n: 20
-});
+const { data } = await supabase.rpc('get_monthly_leaderboard', { top_n: 20 });
 ```
 
 **回傳**:
@@ -256,7 +269,7 @@ const { data } = await supabase.rpc('get_monthly_leaderboard', {
   "top": [
     {
       "rank": 1,
-      "student_no": "412345678",
+      "class_name": "化三甲",
       "name": "王小明",
       "total_score": 700,
       "attend_days": 7,
@@ -274,20 +287,11 @@ const { data } = await supabase.rpc('get_monthly_leaderboard', {
 ```
 
 **注意**:
+- ⚠️ **欄位 `class_name` 取代了 `student_no`**(不再外露學號)
+- `class_name` 即 `students.class_name`,自動從 role_category + year_tag + class_tag 計算
 - `my_rank` 在當月還沒玩過時會是 `null`
 - `top` 在當月沒任何人玩時會是 `[]`
 - 同分排序:總分降序 → 答對次數降序 → 平均猜測次數升序
-- **目前不回傳 role**,排行榜暫時不顯示「(教師)」標記
-
-**前端處理學號遮罩**:
-```js
-function maskStudentNo(no) {
-  if (!no) return '';
-  if (no.length === 9) return no.slice(0,3) + '***' + no.slice(-3);
-  if (no.length === 6) return no.slice(0,2) + '**' + no.slice(-2);
-  return no;
-}
-```
 
 ---
 
@@ -295,7 +299,7 @@ function maskStudentNo(no) {
 
 ### `get_guest_puzzle()`
 
-取得訪客可玩的題目(昨天的題,或 fallback)。**不需要參數**。
+從訪客池隨機抽一題。**不需要參數**。
 
 ```js
 const { data } = await supabase.rpc('get_guest_puzzle');
@@ -311,11 +315,10 @@ const { data } = await supabase.rpc('get_guest_puzzle');
 }
 ```
 
-**欄位**:
-- `puzzle_id`:這題的 UUID,接下來呼叫 `try_guess` 要傳這個
-- `is_fallback`:
-  - `false`:正在玩昨天的正式題
-  - `true`:沒有昨天的題,系統用了 fallback(OXYGEN)
+**邏輯**(2026-04-27 改版):
+1. 從 `daily_puzzles where is_guest_pool = true and is_active = true` 隨機抽一題 → `is_fallback: false`
+2. 訪客池空 → fallback 抽過去日期(`puzzle_date < tw_today`)最新一題 → `is_fallback: true`
+3. 都沒有 → `{"error": "no_guest_puzzle"}`
 
 **前端處理**:把 `puzzle_id` 存到 `sessionStorage`,每次 `try_guess` 都帶。
 
@@ -332,7 +335,7 @@ const { data } = await supabase.rpc('try_guess', {
 });
 ```
 
-**回傳**:
+**回傳**(成功):
 ```json
 {
   "colors": ["green", "yellow", "gray", "gray", "gray", "gray"],
@@ -350,40 +353,55 @@ const { data } = await supabase.rpc('try_guess', {
 }
 ```
 
+> **訪客猜中**才回 `answer`,失敗則 null。訪客玩完一題不公開答案(只有自己解開才知道)。
+
 **錯誤回傳**:
 | error | 場景 |
 |---|---|
 | `puzzle_not_found` | puzzle_id 不存在 |
-| `puzzle_not_available` | 試圖玩今天或未來的題(防作弊) |
+| `puzzle_not_available` | 試圖玩今天/未來的「正規題」(防作弊。訪客池題目跳過此檢查)|
 | `invalid_chars` | 含非英文字母 |
 | `wrong_length` | 長度不對 |
+| `not_in_dictionary` | 不是有效單字(同 submit_guess) |
 
 ---
 
 ## 資料模型摘要
 
-(僅供前端理解,**不要直接 query 這些表**)
+僅供前端理解,**不要直接 query 這些表**。
 
 ### `students`
 ```
-id           uuid (= auth.users.id)
-student_id   text (學號或職員編號)
-name         text
-role         text ('student' / 'teacher' / 'admin')
-class_name   text
-created_at   timestamptz
-updated_at   timestamptz
+id              uuid (= auth.users.id)
+email           text unique          🆕 主識別
+name            text
+role            text ('student' / 'teacher' / 'admin')
+role_category   text ('undergrad'/'master'/'phd'/'staff')  🆕
+year_tag        text (undergrad 才有,'化一'~'化四')         🆕
+class_tag       text (undergrad 才有,'甲'/'乙')             🆕
+class_name      text (顯示 tag,如「化三甲」「碩士」)         🆕 自動算
+student_id      text (nullable,可選,給兌獎用)               改 nullable
+created_at      timestamptz
+updated_at      timestamptz
 ```
 
 ### `daily_puzzles`
 ```
-id           uuid
-puzzle_date  date (台灣時間日期)
-answer       text (前端不該看到)
-word_length  int
-category     text
-is_active    boolean
+id              uuid
+puzzle_date     date (台灣時間日期。訪客池題目此欄為 null)   改 nullable
+answer          text (前端不該看到)
+word_length     int  (generated column = length(answer);自動 5 或 6)
+category        text
+is_active       boolean
+is_guest_pool   boolean (default false;true = 訪客池題目)    🆕
+zh_name         text (中文名,如「苯酚」)                     🆕
+zh_description  text (中文解釋,給揭曉 modal 用)              🆕
+en_description  text (英文解釋,給揭曉 modal 用)              🆕
 ```
+
+**約束**(`daily_puzzles_date_pool_consistency`):
+- `is_guest_pool = true` ⇔ `puzzle_date is null`
+- `is_guest_pool = false` ⇔ `puzzle_date is not null`
 
 ### `attempts`(每人每天最多一筆)
 ```
@@ -399,12 +417,19 @@ submitted_at   timestamptz
 
 ### `guess_sessions`(進行中的猜測,RPC 內部用)
 ```
-student_id   uuid
-puzzle_date  date
-guesses      jsonb
-is_complete  boolean
-updated_at   timestamptz
+student_id     uuid
+puzzle_date    date
+guesses        jsonb
+is_complete    boolean
+updated_at     timestamptz
 ```
+
+### `valid_words`(字典)
+```
+word           text primary key
+```
+**約束**:`length(word) BETWEEN 4 AND 10 AND word = upper(word)`
+**目前資料**:8636 個 5 字 + 15232 個 6 字 = 23868 個 ENABLE 字典英文詞
 
 ---
 
@@ -430,48 +455,52 @@ export const supabase = createClient(
 
 ## API 呼叫包裝建議
 
-建議在 `src/api.js` 把所有 RPC 包成乾淨的函式:
+`src/api.js` 把所有 RPC 包成乾淨的函式:
 
 ```js
-import { supabase } from './supabase-client.js';
+import { getSupabase } from './supabase-client.js';
 
 export async function getTodayPuzzle() {
-  const { data, error } = await supabase.rpc('get_today_puzzle_info');
+  const { data, error } = await getSupabase().rpc('get_today_puzzle_info');
   if (error) throw error;
   return data;
 }
 
 export async function submitGuess(guess) {
-  const { data, error } = await supabase.rpc('submit_guess', {
-    guess_input: guess
-  });
+  const { data, error } = await getSupabase().rpc('submit_guess', { guess_input: guess });
   if (error) throw error;
   return data;
 }
 
-export async function getMyStats(month = null) {
+export async function getYesterdayReveal() {
+  const { data, error } = await getSupabase().rpc('get_yesterday_puzzle_reveal');
+  if (error) throw error;
+  return data;
+}
+
+export async function getMyMonthlyStats(month = null) {
   const params = month ? { target_month: month } : {};
-  const { data, error } = await supabase.rpc('get_my_monthly_stats', params);
+  const { data, error } = await getSupabase().rpc('get_my_monthly_stats', params);
   if (error) throw error;
   return data;
 }
 
-export async function getLeaderboard(month = null, topN = 10) {
+export async function getMonthlyLeaderboard(month = null, topN = 10) {
   const params = { top_n: topN };
   if (month) params.target_month = month;
-  const { data, error } = await supabase.rpc('get_monthly_leaderboard', params);
+  const { data, error } = await getSupabase().rpc('get_monthly_leaderboard', params);
   if (error) throw error;
   return data;
 }
 
 export async function getGuestPuzzle() {
-  const { data, error } = await supabase.rpc('get_guest_puzzle');
+  const { data, error } = await getSupabase().rpc('get_guest_puzzle');
   if (error) throw error;
   return data;
 }
 
 export async function tryGuess(puzzleId, guess) {
-  const { data, error } = await supabase.rpc('try_guess', {
+  const { data, error } = await getSupabase().rpc('try_guess', {
     puzzle_id: puzzleId,
     guess_input: guess
   });
@@ -485,20 +514,23 @@ export async function tryGuess(puzzleId, guess) {
 ## 常見錯誤處理
 
 ### Magic Link 寄不出去
-- 檢查 Supabase Dashboard → Authentication → Email 設定
-- 預設使用 Supabase 的 SMTP,有 rate limit(免費方案 4 emails/hour)
-- 如果寄不出去,可能要設定自己的 SMTP
+- 已切到 Resend SMTP(`smtp.resend.com`,自有 domain `ccllab-tw.com`)
+- 看 Resend Dashboard → Emails 確認有沒有寄出
+- 沒寄出 → SMTP 設定可能跑掉,檢查 Supabase Authentication → Settings → SMTP Settings
 
 ### 學生收到 Magic Link 但點了沒反應
-- 檢查 redirectTo URL 是否正確
-- 檢查 Supabase Dashboard → Authentication → URL Configuration → Redirect URLs 是否包含你的網址
+- 檢查 `redirectTo` URL 是否正確(SITE_URL 環境變數)
+- Supabase Authentication → URL Configuration → Redirect URLs 必須包含本機與 production 兩個 `/#/auth-callback`
+- iOS 加到主畫面後 PWA 模式 webview 跟 Safari session 隔離,建議學生用 Safari 書籤
 
-### 註冊失敗
-- 後端 trigger 會 raise exception
-- error 物件會包含原因(INVALID_STUDENT_ID 等)
-- 前端要解析這些訊息並顯示中文
+### 註冊失敗(`Database error saving new user`)
+- handle_new_user trigger 失敗
+- 最可能 schema 沒到位:重跑 `scripts/fix-migration.sql`
 
 ### Session 過期
-- Supabase Client 預設會自動 refresh
-- 如果 session 真的過期,RPC 呼叫會回 401
-- 應該重新導向到 `#/login`
+- Supabase Client 預設會自動 refresh(30 天)
+- 真的過期 → RPC 回 401 → 前端 router 自動導向 `/login`
+
+### 排行榜不顯示某些使用者
+- 檢查 `students.class_name` 是否為 null(trigger 應該會自動填,但若是舊版 trigger 留下的孤立帳號可能沒填)
+- 用 `update public.students set class_name = '...' where id = '...'` 補
