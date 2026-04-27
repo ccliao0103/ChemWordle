@@ -168,11 +168,56 @@
   margin-top: 1rem;
 }
 
-.event-period {
+/* 活動狀態 banner(動態:搶先體驗中 / 進行中 / 已結束) */
+.event-banner {
+  margin: 1rem auto 0;
+  max-width: 380px;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  text-align: center;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.event-banner.pre-launch {
+  background: #FFF8E5;
+  border-color: var(--color-present);
+}
+.event-banner.active {
+  background: #EFF8EE;
+  border-color: var(--color-correct);
+}
+.event-banner.finished {
+  background: #F5F5F5;
+  border-color: var(--border);
+}
+
+.event-badge {
+  display: inline-block;
+  padding: 0.15em 0.7em;
+  background: var(--text-secondary);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+.event-banner.pre-launch .event-badge { background: var(--color-present); }
+.event-banner.active     .event-badge { background: var(--color-correct); }
+.event-banner.finished   .event-badge { background: var(--text-secondary); }
+
+.event-period-line {
   margin: 0.5rem 0 0 !important;
-  color: var(--color-correct) !important;
-  font-weight: 600;
   font-size: 0.9375rem !important;
+  color: var(--text);
+  font-weight: 500;
+}
+.event-period-line strong { font-weight: 700; }
+
+.event-hint {
+  margin: 0.4rem 0 0 !important;
+  font-size: 0.8125rem !important;
+  color: var(--text-secondary) !important;
+  line-height: 1.5;
 }
 
 /* ── 首頁:須知 ──────────── */

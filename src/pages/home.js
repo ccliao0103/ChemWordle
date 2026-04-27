@@ -1,12 +1,43 @@
 // Page: 首頁 #/
 //
 // - Logo + 系統名稱 + 一句說明
-// - 三個大按鈕:學生註冊 / 教職員註冊 / 訪客體驗
-// - 下方小字:已經有帳號 → 登入
-// - 已登入時,「學生 / 教職員」按鈕直接跳 #/game(只改 href,版面照舊)
+// - 動態活動狀態 banner(搶先體驗中 / 進行中 / 已結束 — 依今天日期自動切)
+// - 三個大按鈕:註冊 / 登入 / 訪客體驗
 // - 遊戲規則與使用須知(摺疊)
 
 import { isAuthenticated } from '../auth.js';
+
+// 活動期間設定(台灣時區錨定)
+const EVENT_START = new Date('2026-05-01T00:00:00+08:00');
+const EVENT_END = new Date('2026-07-01T00:00:00+08:00'); // 6/30 23:59 之後
+
+function renderEventStatus() {
+  const now = new Date();
+  if (now < EVENT_START) {
+    return `
+      <div class="event-banner pre-launch">
+        <span class="event-badge">⚡ 搶先體驗中</span>
+        <p class="event-period-line">正式開賽:<strong>2026 / 5 / 1</strong> — 2026 / 6 / 30</p>
+        <p class="event-hint">現在註冊就能玩!熟悉玩法 + 鍵盤手感,等 5/1 開賽就直接拚分數。</p>
+      </div>
+    `;
+  }
+  if (now < EVENT_END) {
+    return `
+      <div class="event-banner active">
+        <span class="event-badge">🔥 活動進行中</span>
+        <p class="event-period-line">2026 / 5 / 1 — <strong>2026 / 6 / 30</strong></p>
+      </div>
+    `;
+  }
+  return `
+    <div class="event-banner finished">
+      <span class="event-badge">🏁 活動已結束</span>
+      <p class="event-period-line">2026 / 5 / 1 — 2026 / 6 / 30</p>
+      <p class="event-hint">感謝參與!查看最終結果:<a href="#/leaderboard">排行榜</a></p>
+    </div>
+  `;
+}
 
 export async function render(container /* , params */) {
   const authed = await isAuthenticated();
@@ -15,7 +46,7 @@ export async function render(container /* , params */) {
     <div class="home-hero">
       <h1>ChemWordle</h1>
       <p>每天一題化學英文 Wordle</p>
-      <p class="event-period">活動期間:2026 / 5 / 1 — 2026 / 6 / 30</p>
+      ${renderEventStatus()}
     </div>
 
     <div class="home-cta">
