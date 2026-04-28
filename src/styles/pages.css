@@ -30,6 +30,16 @@
 }
 .form-hint  { font-size: 0.8125rem; color: var(--text-secondary); margin: 0.35rem 0 0; }
 .form-error { font-size: 0.8125rem; color: #C62828; margin: 0.35rem 0 0; }
+.form-warning {
+  font-size: 0.8125rem;
+  margin: 0.35rem 0 0;
+  padding: 0.4rem 0.6rem;
+  background: #FFF8E5;
+  border-left: 3px solid var(--color-present);
+  color: var(--text);
+  border-radius: 3px;
+  line-height: 1.5;
+}
 
 .req { color: #C62828; font-weight: bold; }
 
