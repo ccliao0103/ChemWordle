@@ -206,7 +206,13 @@ async function main() {
     <header id="header-root"></header>
     <main id="page-root"></main>
     <footer class="site-footer">
-      製作:<strong>廖振成</strong> · 輔大化學系 CCL Lab · © 2026
+      <p class="footer-credit">
+        製作:<strong>廖振成</strong> · 輔大化學系 CCL Lab · © 2026
+      </p>
+      <p class="footer-disclaimer">
+        靈感來自 NYT Wordle · 非商業教育用途<br>
+        <span class="en">Inspired by Wordle (NYT). Independent, non-commercial, educational use.</span>
+      </p>
     </footer>
     <div id="toast-root" class="toast-root" aria-live="polite"></div>
   `;

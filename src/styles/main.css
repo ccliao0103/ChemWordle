@@ -74,8 +74,18 @@ button, a, input, .tile, .kbd-key {
   margin-top: 1rem;
   line-height: 1.6;
 }
+.site-footer p { margin: 0.25rem 0; }
 .site-footer strong { color: var(--text); font-weight: 600; }
 .site-footer a { color: var(--text-secondary); }
+.site-footer .footer-disclaimer {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  margin-top: 0.5rem;
+}
+.site-footer .footer-disclaimer .en {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
 
 a { color: inherit; text-decoration: underline; }
 a:hover { opacity: 0.8; }
