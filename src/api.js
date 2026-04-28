@@ -55,6 +55,23 @@ export async function getYesterdayReveal() {
   return data;
 }
 
+// ─────────────────────────────────────────────
+// Admin(僅 role=admin 可成功;其他人會回 {error:'forbidden'})
+// ─────────────────────────────────────────────
+
+export async function getAdminOverview() {
+  const { data, error } = await getSupabase().rpc('get_admin_overview');
+  if (error) throw error;
+  return data;
+}
+
+export async function getAdminUserList(month = null) {
+  const params = month ? { target_month: month } : {};
+  const { data, error } = await getSupabase().rpc('get_admin_user_list', params);
+  if (error) throw error;
+  return data;
+}
+
 /**
  * 取我的本月統計。
  * @param {string|null} month 'YYYY-MM-01',不傳 = 當月

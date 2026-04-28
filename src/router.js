@@ -13,10 +13,9 @@ import { parseHash, escapeHtml } from './utils.js';
 import { isAuthenticated } from './auth.js';
 
 // 登入守衛清單(未登入導向 /login)
-const AUTH_REQUIRED = new Set(['/game', '/stats', '/leaderboard']);
+const AUTH_REQUIRED = new Set(['/game', '/stats', '/leaderboard', '/admin']);
 
 // 路由 → 頁面 module 的 dynamic import
-// 批次 5-7 會陸續補齊這些檔案
 const ROUTES = {
   '/':              () => import('./pages/home.js'),
   '/login':         () => import('./pages/login.js'),
@@ -26,7 +25,8 @@ const ROUTES = {
   '/game':          () => import('./pages/game.js'),
   '/stats':         () => import('./pages/stats.js'),
   '/leaderboard':   () => import('./pages/leaderboard.js'),
-  '/guest':         () => import('./pages/guest.js')
+  '/guest':         () => import('./pages/guest.js'),
+  '/admin':         () => import('./pages/admin.js')
 };
 
 let _container = null;

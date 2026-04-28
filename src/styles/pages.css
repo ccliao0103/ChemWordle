@@ -568,6 +568,70 @@
   background: #FFF9E6;
 }
 
+/* ── Admin 後台 ──────────── */
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.admin-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  text-align: center;
+  background: var(--bg);
+}
+.admin-card-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.admin-card-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 0.25rem;
+  line-height: 1.1;
+}
+.admin-section {
+  margin: 1.5rem 0;
+}
+.admin-section h3 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+.admin-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.admin-toolbar label { font-size: 0.875rem; }
+.admin-toolbar select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  background: var(--bg);
+}
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.admin-table {
+  min-width: 720px;
+  font-size: 0.8125rem;
+}
+.admin-table small {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
 /* ── 訪客 banner ─────────── */
 .guest-banner {
   background: #FFF9E6;
