@@ -65,6 +65,18 @@ button, a, input, .tile, .kbd-key {
   padding: 1rem;
 }
 
+.site-footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  line-height: 1.6;
+}
+.site-footer strong { color: var(--text); font-weight: 600; }
+.site-footer a { color: var(--text-secondary); }
+
 a { color: inherit; text-decoration: underline; }
 a:hover { opacity: 0.8; }
 

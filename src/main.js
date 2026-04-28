@@ -205,6 +205,9 @@ async function main() {
   APP_EL().innerHTML = `
     <header id="header-root"></header>
     <main id="page-root"></main>
+    <footer class="site-footer">
+      製作:<strong>廖振成</strong> · 輔大化學系 CCL Lab · © 2026
+    </footer>
     <div id="toast-root" class="toast-root" aria-live="polite"></div>
   `;
 
