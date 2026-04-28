@@ -210,8 +210,8 @@ async function main() {
         製作:<strong>廖振成</strong> · 輔大化學系 CCL Lab · © 2026
       </p>
       <p class="footer-disclaimer">
-        靈感來自 NYT Wordle · 非商業教育用途<br>
-        <span class="en">Inspired by Wordle (NYT). Independent, non-commercial, educational use.</span>
+        靈感來自 NYT Wordle · 非商業用途,僅用於教育<br>
+        <span class="en">Inspired by Wordle (NYT). Independent project, non-commercial, for educational use only.</span>
       </p>
     </footer>
     <div id="toast-root" class="toast-root" aria-live="polite"></div>
