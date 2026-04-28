@@ -3,7 +3,11 @@
 本文件描述後端所有可呼叫的 RPC 函式與認證流程。
 **前端只能使用以下 API,不可直接 SELECT / INSERT / UPDATE / DELETE 任何資料表。**
 
-> 最後更新:2026-04-27(email 註冊模式 + 5/6 字混合 + 訪客池 + 延遲揭曉)
+> 最後更新:2026-04-28(per-user shuffled queue 模型)
+>
+> **重大變化**:每位學生擁有專屬洗牌題序(`student_puzzle_queues`)。
+> 同一天不同學生玩到的題目**不同**,防止班群傳答案。
+> 所有 RPC **簽名與回傳結構不變**,只是內部邏輯改成從學生個人 queue 找題。
 
 ---
 
@@ -430,6 +434,23 @@ word           text primary key
 ```
 **約束**:`length(word) BETWEEN 4 AND 10 AND word = upper(word)`
 **目前資料**:8636 個 5 字 + 15232 個 6 字 = 23868 個 ENABLE 字典英文詞
+
+### `student_puzzle_queues`🆕(每位學生的專屬題序)
+```
+student_id     uuid (FK → students.id, ON DELETE CASCADE)
+position       int  (0-indexed, 對應 Day N)
+puzzle_id      uuid (FK → daily_puzzles.id)
+round_number   int  (純記錄第幾輪洗牌)
+added_at       timestamptz
+PRIMARY KEY (student_id, position)
+```
+**邏輯**:
+- 學生註冊時,trigger `handle_new_user` 自動呼叫 `shuffle_round_for_student()`
+  把所有非訪客池 + active 的 daily_puzzles 隨機排序,塞 position 0..N-1
+- 管理員 INSERT 新 daily_puzzle 時,trigger `on_daily_puzzle_inserted` 自動 append 到所有學生 queue 末尾
+- Day N = `(tw_today() - student.created_at::date)`
+- 學生今天玩 `queue[Day N]`;若 Day N 超過 max position,自動再洗一輪
+- 缺席當天 → 該題永遠跳過(時間驅動,不補玩)
 
 ---
 

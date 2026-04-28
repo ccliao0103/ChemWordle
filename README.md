@@ -115,6 +115,8 @@ npm run dev
 | 6 | `fix-migration.sql` | students 表 schema 改 email 模式 + 重寫 handle_new_user trigger |
 | 7 | `rpc-leaderboard-class-name.sql` | 排行榜改顯示 class_name(取代 student_no)|
 | 8 | `seed-daily-puzzles.sql` | 排程 4/24-6/25 共 63 題每日 + 21 題訪客池 |
+| 9 | `seed-finale-week.sql` | 6/26-6/30 收尾週 5 題 |
+| 10 | `per-user-queue.sql` | 🆕 Per-user 洗牌題序(防班群傳答案)|
 
 **注意**:後端某些 RPC(如 `submit_guess`、`try_guess`)在第 4、5、6 步重寫時會用 `CREATE OR REPLACE`,若你的後端有自訂版本,需要手動 merge。
 

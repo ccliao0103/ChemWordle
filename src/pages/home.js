@@ -45,7 +45,7 @@ export async function render(container /* , params */) {
   container.innerHTML = `
     <div class="home-hero">
       <h1>ChemWordle</h1>
-      <p>每天一題化學英文 Wordle</p>
+      <p>每天為你客製一題化學英文 Wordle</p>
       ${renderEventStatus()}
     </div>
 
@@ -71,11 +71,13 @@ export async function render(container /* , params */) {
       <details open>
         <summary>遊戲規則</summary>
         <ul>
-          <li>每天一題 6 字化學英文單字,每人每天 <strong>6 次</strong>猜測機會</li>
+          <li>每天一題 5 或 6 字化學英文單字,每人每天 <strong>6 次</strong>猜測機會</li>
+          <li><strong>每人題目不同</strong>:系統幫每位學生洗一份專屬題序,跟同學「對答案」沒用 😉</li>
           <li>顏色說明:<span class="chip chip-green">綠</span> 字母位置正確、<span class="chip chip-yellow">黃</span> 字母存在但位置錯、<span class="chip chip-gray">灰</span> 字母不存在</li>
           <li>必須是有效英文單字,亂打(如 XZQPWL)會被擋下,但<strong>不扣次數</strong></li>
           <li>計分:1/2/3/4/5/6 次猜中分別得 100/90/80/70/60/50 分;猜錯 0 分</li>
-          <li>台灣時間每天 00:00 換新題;答案<strong>隔天</strong>登入會顯示(含中文解釋)</li>
+          <li>台灣時間每天 00:00 換新題;<strong>缺席當天的題就跳過</strong>(不能補玩)</li>
+          <li>答案<strong>隔天</strong>登入會顯示(含中英文解釋)</li>
         </ul>
       </details>
 
