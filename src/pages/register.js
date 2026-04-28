@@ -28,7 +28,7 @@ export async function render(container /* , params */) {
           <label for="email">Email <span class="req">*</span></label>
           <input id="email" name="email" type="email"
                  inputmode="email" autocomplete="email"
-                 placeholder="例:peter@gmail.com" required />
+                 placeholder="例:fjuchem@gmail.com" required />
           <p class="form-hint">用你常看的信箱(推薦 Gmail)。Magic Link 寄到這裡。</p>
           <p class="form-warning">⚠️ <strong>送出前請仔細確認</strong>:若填錯,系統有 1 分鐘冷卻才能重填。</p>
           <p class="form-error hidden" id="err-email"></p>

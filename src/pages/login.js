@@ -21,7 +21,7 @@ export async function render(container /* , params */) {
           <label for="email">Email</label>
           <input id="email" name="email" type="email"
                  inputmode="email" autocomplete="email"
-                 placeholder="例:peter@gmail.com" required />
+                 placeholder="例:fjuchem@gmail.com" required />
           <p class="form-error hidden" id="err"></p>
         </div>
         <button type="submit" class="btn btn-block" id="submit">送出登入連結</button>
