@@ -95,18 +95,54 @@ async function handleRoute() {
   }
 
   // 3) 載入頁面 module 並呼叫 render
-  try {
-    const mod = await loader();
-    if (typeof mod.render !== 'function') {
-      throw new Error(`Page ${path} 沒有 export render()`);
+  let attempt = 0;
+  while (true) {
+    attempt += 1;
+    try {
+      const mod = await loader();
+      if (typeof mod.render !== 'function') {
+        throw new Error(`Page ${path} 沒有 export render()`);
+      }
+      _container.innerHTML = '';
+      await mod.render(_container, params);
+      return; // success
+    } catch (e) {
+      // 🆕 特殊處理:dynamic import 失敗(部署新版後舊頁面拿不到新 chunk)
+      // 這是 Vite SPA 經典問題 — 用 reload 取得最新 HTML 即可解。
+      const isStaleChunk = (e instanceof TypeError) && (
+        /Failed to fetch dynamically imported module/i.test(e.message) ||
+        /Importing a module script failed/i.test(e.message) ||
+        /error loading dynamically imported module/i.test(e.message)
+      );
+      if (isStaleChunk) {
+        console.warn('[router] 偵測到舊版 chunk,自動重新整理取得最新版');
+        renderStaleChunkBanner();
+        // 給使用者看到提示 0.6 秒,然後 reload
+        setTimeout(() => window.location.reload(), 600);
+        return;
+      }
+
+      // 一般失敗:重試一次(常見時序 bug)
+      if (attempt < 2) {
+        console.warn(`[router] ${path} 載入失敗(第 ${attempt} 次),250ms 後重試...`, e);
+        await new Promise((r) => setTimeout(r, 250));
+        continue;
+      }
+      console.error(`[router] ${path} 重試後仍失敗:`, e);
+      renderPageLoadError(path, e);
+      return;
     }
-    // 清空 container,交給 page module 自己畫
-    _container.innerHTML = '';
-    await mod.render(_container, params);
-  } catch (e) {
-    // 批次 3 階段,多數頁面檔案還不存在,會 404/import 失敗
-    renderPageLoadError(path, e);
   }
+}
+
+function renderStaleChunkBanner() {
+  _container.innerHTML = `
+    <div style="max-width:480px;margin:4rem auto;padding:1.5rem;text-align:center;
+                font-family:system-ui,sans-serif;border:1px solid #D3D6DA;border-radius:8px;">
+      <p style="margin:0;color:#6AAA64;font-size:1rem;">🔄 偵測到新版本</p>
+      <p style="margin:0.5rem 0 0;color:#787C7E;font-size:0.875rem;">正在更新中,請稍候…</p>
+    </div>
+  `;
 }
 
 // ─────────────────────────────────────────────
@@ -124,29 +160,23 @@ function renderNotFound(path) {
 }
 
 function renderPageLoadError(path, err) {
+  console.error('[router] page load error:', err);
   _container.innerHTML = `
-    <div style="max-width:640px;margin:3rem auto;padding:1.5rem;font-family:system-ui,sans-serif;border:1px solid #D3D6DA;border-radius:8px;">
-      <h2 style="margin:0 0 0.5rem;">頁面尚未實作</h2>
-      <p style="color:#787C7E;margin:0.25rem 0;">路徑:<code>${escapeHtml(path)}</code></p>
-      <p style="color:#787C7E;margin:0.25rem 0;font-size:0.875rem;">
-        (批次 3 骨架階段,Router 本身已可運作。頁面會在批次 5–7 陸續加入。)
+    <section class="card text-center" style="max-width:480px;margin:3rem auto;">
+      <h2 style="margin-top:0;">頁面載入失敗</h2>
+      <p class="text-muted">路徑:<code>${escapeHtml(path)}</code></p>
+      <p class="text-muted" style="font-size:0.875rem;">
+        最簡單的解法:點下面按鈕重新整理。
       </p>
-      <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
-        <a href="#/">首頁</a> ·
-        <a href="#/login">登入</a> ·
-        <a href="#/register?role=student">學生註冊</a> ·
-        <a href="#/register?role=teacher">教職員註冊</a> ·
-        <a href="#/check-email">收信提示</a> ·
-        <a href="#/auth-callback">Auth Callback</a> ·
-        <a href="#/game">遊戲(需登入)</a> ·
-        <a href="#/stats">統計(需登入)</a> ·
-        <a href="#/leaderboard">排行榜(需登入)</a> ·
-        <a href="#/guest">訪客</a>
+      <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
+        <button type="button" class="btn"
+                onclick="window.location.reload()">↻ 重新整理</button>
+        <a class="btn btn-secondary" href="#/">回首頁</a>
       </div>
-      <details style="margin-top:1rem;color:#787C7E;font-size:0.75rem;">
-        <summary>Error 詳情</summary>
-        <pre style="white-space:pre-wrap;">${escapeHtml(String(err?.stack || err))}</pre>
+      <details style="margin-top:1.5rem;color:var(--text-secondary);font-size:0.75rem;text-align:left;">
+        <summary>技術細節(若回報問題,請截這段)</summary>
+        <pre style="white-space:pre-wrap;margin:0.5rem 0 0;">${escapeHtml(String(err?.stack || err))}</pre>
       </details>
-    </div>
+    </section>
   `;
 }
