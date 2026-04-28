@@ -120,11 +120,15 @@ export function translateAuthError(raw) {
     if (s.includes(keyword)) return zh;
   }
   if (/already.*registered/i.test(s) || /duplicate/i.test(s) || /unique/i.test(s)) {
-    return '此 email 已註冊過,請直接登入';
+    return '此 email 已註冊過,請改用「登入」';
   }
   if (/expired/i.test(s)) return '登入連結已過期或已使用過,請重新申請';
   if (/invalid/i.test(s) && /link/i.test(s)) return '登入連結無效,請重新申請';
-  if (/rate limit/i.test(s)) return '寄送頻率過高,請稍後再試';
+  // Supabase 對每個 email 1 分鐘冷卻(常見訊息含 "security purposes" / "once every X seconds")
+  if (/security purposes|once every|every \d+ seconds/i.test(s)) {
+    return '系統限制每個 email 1 分鐘只能寄一次信。請等約 1 分鐘後再試。';
+  }
+  if (/rate limit/i.test(s)) return '寄送頻率過高,請稍後再試(1 小時內可寄信數量有上限)';
   return s;
 }
 

@@ -42,7 +42,12 @@ export async function render(container /* , params */) {
         </p>
       </div>
 
-      <p style="margin-top:2rem;">
+      <p class="text-muted" style="margin-top:2rem;font-size:0.8125rem;">
+        寄錯 email 了嗎?<a href="#/register">回去重填</a>
+        (請等約 1 分鐘再重送,系統有冷卻限制)
+      </p>
+
+      <p style="margin-top:1rem;">
         <a href="#/">回首頁</a>
       </p>
     </section>
