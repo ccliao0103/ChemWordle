@@ -49,8 +49,8 @@
   gap: 0.4rem;
 }
 
-/* ❓ How to Play 按鈕 */
-.hdr-help {
+/* Header 圓形 icon 按鈕(? 與 ↻ 共用)*/
+.hdr-icon-btn {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -67,9 +67,12 @@
   padding: 0;
   line-height: 1;
 }
-.hdr-help:hover {
+.hdr-icon-btn:hover {
   background: #F5F5F5;
   color: var(--text);
+}
+.hdr-icon-btn:active {
+  transform: scale(0.95);
 }
 
 .hdr-btn {

@@ -35,7 +35,11 @@ async function render() {
         <span class="hdr-logo-text">ChemWordle</span>
       </a>
       <div class="hdr-right">
-        <button type="button" class="hdr-help"
+        <button type="button" class="hdr-icon-btn"
+                data-action="refresh"
+                aria-label="重新整理(卡住時用)"
+                title="卡住時點這裡">↻</button>
+        <button type="button" class="hdr-icon-btn"
                 data-action="show-howto"
                 aria-label="How to play / 怎麼玩"
                 title="How to play">?</button>
@@ -102,8 +106,10 @@ function bindEventsOnce() {
       ev.preventDefault();
       const { showHowToModal } = await import('./howto-modal.js');
       // 點 ❓ 開的不算「初次」,不寫 localStorage(下次首訪還是會自動秀)
-      // 已經看過的人才會點 ❓ — 讓他們複習,但不影響「首次」邏輯
       showHowToModal({ markSeen: false });
+    } else if (action === 'refresh') {
+      ev.preventDefault();
+      window.location.reload();
     }
   });
 }
