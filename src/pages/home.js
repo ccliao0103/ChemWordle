@@ -77,7 +77,7 @@ export async function render(container /* , params */) {
           <li>必須是有效英文單字,亂打(如 XZQPWL)會被擋下,但<strong>不扣次數</strong></li>
           <li>計分:1/2/3/4/5/6 次猜中分別得 100/90/80/70/60/50 分;猜錯 0 分</li>
           <li>台灣時間每天 00:00 換新題;<strong>缺席當天的題就跳過</strong>(不能補玩)</li>
-          <li>答案<strong>隔天</strong>登入會顯示(含中英文解釋)</li>
+          <li>玩完當下立刻顯示答案 + 中英文解釋(每人題目不同,不怕外洩)</li>
         </ul>
       </details>
 

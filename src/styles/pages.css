@@ -534,6 +534,47 @@
   font-size: 1.25rem;
 }
 
+/* 立即揭曉答案卡片(玩完顯示) */
+.answer-card {
+  margin: 1rem auto;
+  max-width: 380px;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  background: #FAFAFA;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.answer-card .answer-word {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-correct);
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+.answer-card .answer-zh-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.answer-card .answer-desc {
+  font-size: 0.9375rem;
+  text-align: left;
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+  color: var(--text);
+}
+.answer-card .answer-desc-en {
+  font-size: 0.8125rem;
+  text-align: left;
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-style: italic;
+}
+
 /* ── Badge ────────────────── */
 .badge {
   display: inline-block;
