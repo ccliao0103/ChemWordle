@@ -20,14 +20,8 @@
 
 | 英文 | 中文 | 類別 | 難 | 訪客? | zh_description | en_description |
 |---|---|---|---|---|---|---|
-| VINYL | 乙烯基 | organic | ★★ |   | CH₂=CH- 取代基,聚乙烯醇(PVA)、PVC 的單體單元。 | The CH₂=CH- substituent; structural unit in PVC and PVA polymers. |
 | DIENE | 二烯 | organic | ★★ |   | 含 2 個 C=C 雙鍵的烴類,如丁二烯。 | Hydrocarbons with two C=C double bonds, e.g., butadiene. |
-| IMINE | 亞胺 | organic | ★★ |   | 含 C=N 雙鍵的官能基,類似酮但氮取代氧。 | Functional group with C=N double bond; analogous to ketone but with N. |
 | VAPOR | 蒸氣 | gen | ★ |   | 物質的氣態(美式拼法;英式為 vapour)。 | The gaseous state of a substance (US spelling; UK uses "vapour"). |
-| ALDOL | 醛醇 | organic | ★★★ |   | 醛醇縮合反應的產物,β-羥基醛/酮。 | β-hydroxy aldehyde/ketone; product of an aldol condensation. |
-| TRIOL | 三醇 | organic | ★★★ |   | 含 3 個 -OH 羥基的有機化合物,如甘油 (glycerol)。 | An organic compound with three -OH groups, like glycerol. |
-| WAVES | 波(複) | phys-chem | ★ |   | 電磁波、聲波、物質波等的通稱。 | Electromagnetic, sound, or matter waves. |
-| ENOLS | 烯醇(複) | organic | ★★★ |   | 含 C=C-OH 的結構;與酮 / 醛互為互變異構體。 | Compounds with C=C-OH structure; tautomers of ketones/aldehydes. |
 
 ## 6 字(12 題)
 
@@ -39,12 +33,7 @@
 | DOPING | 摻雜 | mat | ★★ |   | 在純物質中加入少量雜質改變性質,如半導體、ITO 透明導電膜。 | Adding small amounts of impurities to alter properties (e.g., semiconductors). |
 | IONIZE | 解離 | phys-chem | ★ |   | 中性原子或分子獲得 / 失去電子變成離子。 | Neutral atoms or molecules gaining or losing electrons to form ions. |
 | REDUCE | 還原 | reaction | ★ |   | 獲得電子(氧化態降低)的化學反應;與氧化相對。 | Gaining electrons (oxidation state decreases); opposite of oxidation. |
-| HEATED | 加熱(過去) | gen | ★ |   | 已加熱、受熱(動詞 heat 的過去式)。 | Past tense/participle of heat. |
-| BOILED | 煮沸(過去) | gen | ★ |   | 已加熱至沸點(動詞 boil 的過去式)。 | Past tense/participle of boil; heated to the boiling point. |
-| FROZEN | 凍結 | gen | ★ |   | 已凝固成固態(動詞 freeze 的過去分詞)。 | Past participle of freeze; solidified by cooling. |
-| COSMIC | 宇宙的 | phys-chem | ★★ |   | 宇宙級的、宇宙射線的(cosmic ray);天文化學常見字眼。 | Of or relating to the universe (e.g., cosmic rays); common in astrochemistry. |
 | HEXENE | 己烯 | organic | ★★ |   | C₆H₁₂,六碳烯烴,如 1-己烯。 | C₆H₁₂; a six-carbon alkene, e.g., 1-hexene. |
-| LITHIA | 鋰氧化物 | inorg | ★★★ |   | Li₂O,鋰的氧化物;鋰電池前驅物之一。 | Li₂O; lithium oxide, used in ceramics and as a battery precursor. |
 
 ---
 
