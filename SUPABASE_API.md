@@ -36,8 +36,8 @@ const { error } = await supabase.auth.signInWithOtp({
 
 **後端 trigger `handle_new_user` 會在使用者第一次點 Magic Link 後讀這些 metadata,寫入 `students` 表,並自動計算 `class_name` 顯示 tag**:
 - undergrad → `年級 + 班別`(如 `化三甲`)
-- master → `碩士`
-- phd → `博士`
+- master → `碩士班`
+- phd → `博士班`
 - staff → `教職員`
 
 **對應的錯誤訊息**(後端 raise,前端從 `error.message` 解析):

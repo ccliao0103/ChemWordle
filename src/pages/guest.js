@@ -48,8 +48,8 @@ export async function render(container /* , params */) {
 
 function mountGame(container, info) {
   const bannerText = info.is_fallback
-    ? '訪客體驗題'
-    : '訪客模式:你正在玩昨天的題目';
+    ? '訪客模式:題庫尚未開放,先試試這題'
+    : '訪客模式:從訪客題庫隨機抽一題 🎲';
 
   container.innerHTML = `
     <div class="guest-banner">${escapeHtml(bannerText)}</div>
@@ -129,7 +129,7 @@ function renderGuestEnd(result) {
     <h2>${escapeHtml(mainLine)}</h2>
     ${answerLine}
     <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
-      <button type="button" class="btn" id="play-again">再玩一次</button>
+      <button type="button" class="btn" id="play-again">🎲 再來一題(隨機)</button>
       <a class="btn btn-secondary" href="#/">想參加排行榜?註冊</a>
     </div>
   `;

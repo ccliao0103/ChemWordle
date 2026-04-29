@@ -1,61 +1,66 @@
 // Page: 管理後台 #/admin
 //
-// - 整體統計(總人數 / 本月活躍)
-// - 各身分人數(大學部 / 碩士 / 博士 / 教職員)
-// - 各班級人數
-// - 全部使用者列表(含本月分數,可下載 CSV)
-// - 月份切換
-//
-// 安全:RPC 端檢查 students.role = 'admin',否則回 forbidden。
+// - 整體統計 / 各身分人數 / 各班級人數
+// - 全部使用者列表(本月分數,可下載 CSV)
+// - 月份切換 + 班級/身分篩選
+// - 安全:RPC 端檢查 students.role = 'admin',否則回 forbidden
 
 import { getAdminOverview, getAdminUserList } from '../api.js';
 import { createSpinner } from '../components/spinner.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml, formatMonthZh } from '../utils.js';
 
-// 活動期間月份
 const AVAILABLE_MONTHS = [
   { value: '2026-04-01', label: '4 月(試營運)' },
   { value: '2026-05-01', label: '5 月' },
   { value: '2026-06-01', label: '6 月' }
 ];
 
-// 預設選當月
 function defaultMonth() {
-  const now = new Date();
-  const m = now.getMonth() + 1; // 1-12
+  const m = new Date().getMonth() + 1;
   if (m === 4) return '2026-04-01';
   if (m === 5) return '2026-05-01';
   if (m === 6) return '2026-06-01';
-  return '2026-05-01'; // 活動外預設 5 月
+  return '2026-05-01';
 }
 
-let _selectedMonth = defaultMonth();
+// 模組級狀態(切換 filter 時不需重新打 RPC)
+const _state = {
+  overview: null,
+  userList: null,
+  month: defaultMonth(),
+  filter: 'all', // 'all' / '化一甲' / '化三乙' / '碩士班' / '博士班' / '教職員'
+  container: null
+};
 
 export async function render(container /* , params */) {
-  container.innerHTML = '';
-  container.appendChild(createSpinner('載入後台中…'));
+  _state.container = container;
 
-  let overview, userList;
-  try {
-    [overview, userList] = await Promise.all([
-      getAdminOverview(),
-      getAdminUserList(_selectedMonth)
-    ]);
-  } catch (e) {
-    console.error('[admin] load failed:', e);
-    container.innerHTML = `
-      <section class="card text-center" style="margin:2rem auto;max-width:480px;">
-        <h2>載入後台失敗</h2>
-        <p class="form-error">${escapeHtml(e?.message || String(e))}</p>
-        <a class="btn btn-secondary" href="#/">回首頁</a>
-      </section>
-    `;
-    return;
+  // 第一次或月份變動 → 載入
+  if (!_state.userList) {
+    container.innerHTML = '';
+    container.appendChild(createSpinner('載入後台中…'));
+    try {
+      const [o, u] = await Promise.all([
+        getAdminOverview(),
+        getAdminUserList(_state.month)
+      ]);
+      _state.overview = o;
+      _state.userList = u;
+    } catch (e) {
+      console.error('[admin] load failed:', e);
+      container.innerHTML = `
+        <section class="card text-center" style="margin:2rem auto;max-width:480px;">
+          <h2>載入後台失敗</h2>
+          <p class="form-error">${escapeHtml(e?.message || String(e))}</p>
+          <a class="btn btn-secondary" href="#/">回首頁</a>
+        </section>
+      `;
+      return;
+    }
   }
 
-  // 權限檢查
-  if (overview?.error === 'forbidden' || userList?.error === 'forbidden') {
+  if (_state.overview?.error === 'forbidden' || _state.userList?.error === 'forbidden') {
     container.innerHTML = `
       <section class="card text-center" style="margin:2rem auto;max-width:480px;">
         <h2>無權限</h2>
@@ -66,14 +71,15 @@ export async function render(container /* , params */) {
     return;
   }
 
-  renderDashboard(container, overview, userList);
+  renderDashboard();
 }
 
-function renderDashboard(container, overview, userList) {
+function renderDashboard() {
+  const { container, overview, userList, month, filter } = _state;
   const { total_users, by_role_category = [], by_class = [] } = overview;
-  const users = userList.users || [];
-  const month = userList.month;
-  const activeCount = users.filter((u) => u.attend_days > 0).length;
+  const allUsers = userList.users || [];
+  const filteredUsers = applyFilter(allUsers, filter);
+  const activeCount = allUsers.filter((u) => u.attend_days > 0).length;
 
   container.innerHTML = `
     <section>
@@ -106,14 +112,30 @@ function renderDashboard(container, overview, userList) {
           <label>月份:
             <select id="month-select">
               ${AVAILABLE_MONTHS.map(m => `
-                <option value="${m.value}" ${m.value === _selectedMonth ? 'selected' : ''}>${m.label}</option>
+                <option value="${m.value}" ${m.value === month ? 'selected' : ''}>${m.label}</option>
               `).join('')}
+            </select>
+          </label>
+          <label>篩選:
+            <select id="filter-select">
+              <option value="all" ${filter === 'all' ? 'selected' : ''}>全部 (${allUsers.length})</option>
+              <optgroup label="大學部">
+                ${['化一甲','化一乙','化二甲','化二乙','化三甲','化三乙','化四甲','化四乙']
+                  .map(c => {
+                    const n = allUsers.filter(u => u.class_name === c).length;
+                    return `<option value="${c}" ${filter === c ? 'selected' : ''}>${c} (${n})</option>`;
+                  }).join('')}
+              </optgroup>
+              ${['碩士班', '博士班', '教職員'].map(c => {
+                const n = allUsers.filter(u => u.class_name === c).length;
+                return `<option value="${c}" ${filter === c ? 'selected' : ''}>${c} (${n})</option>`;
+              }).join('')}
             </select>
           </label>
           <button type="button" class="btn btn-secondary" id="csv-btn">📥 下載 CSV</button>
         </div>
         <p class="text-muted" style="font-size:0.8125rem;margin:0.5rem 0;">
-          按本月總分排序。分數 = sum(attempts.score)。
+          顯示 ${filteredUsers.length} / ${allUsers.length} 人。按本月總分排序。CSV 下載依目前篩選。
         </p>
         <div class="table-scroll">
           <table class="rank-table admin-table">
@@ -133,9 +155,11 @@ function renderDashboard(container, overview, userList) {
               </tr>
             </thead>
             <tbody>
-              ${users.length === 0
-                ? `<tr><td colspan="11" class="text-muted text-center" style="padding:1rem;">本月尚無資料</td></tr>`
-                : users.map((u, i) => `
+              ${filteredUsers.length === 0
+                ? `<tr><td colspan="11" class="text-muted text-center" style="padding:1rem;">${
+                    filter === 'all' ? '本月尚無資料' : '此篩選條件下無人'
+                  }</td></tr>`
+                : filteredUsers.map((u, i) => `
                   <tr>
                     <td>${i + 1}</td>
                     <td>${escapeHtml(u.name)}</td>
@@ -161,23 +185,34 @@ function renderDashboard(container, overview, userList) {
     </section>
   `;
 
-  // 月份切換
+  // 月份切換 → 重新載入(refetch)
   container.querySelector('#month-select').addEventListener('change', async (e) => {
-    _selectedMonth = e.target.value;
-    container.innerHTML = '';
-    container.appendChild(createSpinner('載入中…'));
+    _state.month = e.target.value;
+    _state.userList = null; // 標記要重抓
     await render(container);
+  });
+
+  // 篩選切換 → 重畫(不 refetch)
+  container.querySelector('#filter-select').addEventListener('change', (e) => {
+    _state.filter = e.target.value;
+    renderDashboard();
   });
 
   // CSV 下載
   container.querySelector('#csv-btn').addEventListener('click', () => {
-    if (users.length === 0) {
-      showToast('本月沒有資料可下載', { type: 'info' });
+    if (filteredUsers.length === 0) {
+      showToast('目前篩選下沒有資料可下載', { type: 'info' });
       return;
     }
-    downloadCsv(`chemwordle-${month}.csv`, users);
+    const fileSuffix = filter === 'all' ? '' : '-' + filter;
+    downloadCsv(`chemwordle-${month}${fileSuffix}.csv`, filteredUsers);
     showToast('CSV 已下載');
   });
+}
+
+function applyFilter(users, filter) {
+  if (filter === 'all') return users;
+  return users.filter((u) => u.class_name === filter);
 }
 
 function renderMiniTable(headers, rows) {
@@ -218,7 +253,6 @@ function downloadCsv(filename, rows) {
     return `"${String(v).replaceAll('"', '""')}"`;
   }).join(','));
   const csv = [headerLine, ...dataLines].join('\n');
-  // BOM 讓 Excel 認得 UTF-8
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
