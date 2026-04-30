@@ -4,6 +4,7 @@
 //   { month, top: [{rank, class_name, name, total_score, attend_days, solved_count, avg_guess_count}],
 //     my_rank: {rank, total_score, attend_days, solved_count} | null }
 // 顯示:
+//   - 月份選單(4 月試營運 / 5 月 / 6 月)→ 切換重新載入
 //   - 標題:「YYYY 年 M 月排行榜」
 //   - 「我的排名」突出區塊(my_rank 不為 null 時)
 //   - 前 10 名表格(顯示班別 tag 如「化三甲」)
@@ -13,13 +14,40 @@ import { getMonthlyLeaderboard } from '../api.js';
 import { createSpinner } from '../components/spinner.js';
 import { formatMonthZh, escapeHtml } from '../utils.js';
 
+const AVAILABLE_MONTHS = [
+  { value: '2026-04-01', label: '4 月(試營運)' },
+  { value: '2026-05-01', label: '5 月' },
+  { value: '2026-06-01', label: '6 月' }
+];
+
+function defaultMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  if (y === 2026) {
+    if (m <= 4) return '2026-04-01';
+    if (m === 5) return '2026-05-01';
+    if (m >= 6) return '2026-06-01';
+  }
+  // 活動結束後,預設停在 6 月
+  if (y > 2026) return '2026-06-01';
+  // 2026 之前(理論不會發生)
+  return '2026-05-01';
+}
+
+let _selectedMonth = defaultMonth();
+
 export async function render(container /* , params */) {
+  await load(container);
+}
+
+async function load(container) {
   container.innerHTML = '';
   container.appendChild(createSpinner('載入排行榜中…'));
 
   let data;
   try {
-    data = await getMonthlyLeaderboard();
+    data = await getMonthlyLeaderboard(_selectedMonth);
   } catch (e) {
     console.error('[leaderboard] getMonthlyLeaderboard failed:', e);
     container.innerHTML = `
@@ -42,7 +70,17 @@ function renderLeaderboard(container, d) {
 
   container.innerHTML = `
     <section>
-      <h2 class="page-title">${escapeHtml(monthLabel)} 排行榜</h2>
+      <div class="leaderboard-header">
+        <h2 class="page-title" style="margin:0;">${escapeHtml(monthLabel)} 排行榜</h2>
+        <label class="month-picker">
+          月份:
+          <select id="lb-month-select">
+            ${AVAILABLE_MONTHS.map(m => `
+              <option value="${m.value}" ${m.value === _selectedMonth ? 'selected' : ''}>${m.label}</option>
+            `).join('')}
+          </select>
+        </label>
+      </div>
 
       ${renderMyRank(myRank)}
 
@@ -57,6 +95,15 @@ function renderLeaderboard(container, d) {
       </div>
     </section>
   `;
+
+  // 月份切換 → 重新載入
+  const sel = container.querySelector('#lb-month-select');
+  if (sel) {
+    sel.addEventListener('change', async (e) => {
+      _selectedMonth = e.target.value;
+      await load(container);
+    });
+  }
 }
 
 function renderMyRank(my) {

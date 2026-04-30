@@ -129,6 +129,31 @@
   margin-left: 0.25rem;
 }
 
+/* 排行榜:標題 + 月份選單 */
+.leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.leaderboard-header .month-picker {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.leaderboard-header .month-picker select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  background: var(--bg);
+}
+
 /* 排行榜:我的獨立區塊 */
 .my-rank-card {
   background: #FFF9E6;
