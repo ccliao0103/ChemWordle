@@ -104,7 +104,8 @@ export async function render(container /* , params */) {
       <details>
         <summary>評分與獎勵 🍦</summary>
         <ul>
-          <li><strong>出席獎(全勤)</strong>:該月每天都有提交紀錄(不論對錯)→ <strong>霜淇淋券 1 張</strong></li>
+          <li><strong>全勤獎</strong>:該月每天都有提交紀錄(不論對錯)→ <strong>霜淇淋券 2 張</strong></li>
+          <li><strong>參加獎</strong>:該月出席達 <strong>20 天</strong>(含)以上 → <strong>霜淇淋券 1 張</strong>(全勤者可同時獲得,共 3 張)</li>
           <li><strong>月排行</strong>(每月結算):
             <ul>
               <li>🥇 第一名 → 霜淇淋券 <strong>10 張</strong></li>

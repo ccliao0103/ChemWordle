@@ -490,6 +490,40 @@
   text-align: center;
 }
 
+/* ── 系統更新 modal ───────── */
+.update-content { font-size: 0.9375rem; line-height: 1.55; }
+.update-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.update-item:last-child { border-bottom: none; }
+.update-item:first-child { padding-top: 0; }
+.update-date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.update-title {
+  margin: 0.15rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.update-list {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.25rem;
+}
+.update-list li { margin: 0.4rem 0; }
+.update-note {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: #F5F5F5;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 /* ── Toast ────────────────── */
 .toast-root {
   position: fixed;

@@ -230,11 +230,20 @@ async function main() {
 
   // 6. 第一次進站秀 How to Play modal(localStorage 記錄看過後就不再自動秀)
   //    auth-callback 頁面跳過(剛收信進來,不要打擾流程)
+  //    7. 回訪者看「未讀的系統更新」公告(第一次進站者直接標記已讀,不打擾)
   if (!window.location.hash.startsWith('#/auth-callback')) {
-    import('./components/howto-modal.js').then(({ shouldShowHowTo, showHowToModal }) => {
-      if (shouldShowHowTo()) {
-        // 延遲一點,讓頁面先 render,再彈 modal
+    Promise.all([
+      import('./components/howto-modal.js'),
+      import('./components/update-modal.js')
+    ]).then(([{ shouldShowHowTo, showHowToModal }, { maybeShowUpdateModal, markAllUpdatesSeen }]) => {
+      const isFirstVisit = shouldShowHowTo();
+      if (isFirstVisit) {
+        // 新手:先彈 how-to,把現有公告全標已讀(那些對他而言不算「更新」)
+        markAllUpdatesSeen();
         setTimeout(() => showHowToModal(), 400);
+      } else {
+        // 回訪者:有未讀公告才彈
+        setTimeout(() => maybeShowUpdateModal(), 400);
       }
     });
   }
