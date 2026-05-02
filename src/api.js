@@ -112,9 +112,9 @@ export async function getGuestPuzzle() {
 
 /**
  * 訪客送出一次猜測(不寫 DB,後端無狀態比對)。
- * 回傳:
- *   - { colors, solved, answer }       // 猜中才有 answer
- *   - { error: <code>, message: <zh> } // 業務錯誤
+ * 回傳(每次都帶完整 metadata,前端在玩完當下立即揭曉,失敗也能看答案):
+ *   - { colors, solved, answer, zh_name, zh_description, en_description }
+ *   - { error: <code>, message: <zh> }   // 業務錯誤
  */
 export async function tryGuess(puzzleId, guess) {
   const { data, error } = await getSupabase().rpc('try_guess', {

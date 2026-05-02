@@ -80,12 +80,15 @@ function mountGame(container, info) {
         const solved = !!res?.solved;
         const atLimit = guessCount >= MAX_ATTEMPTS;
         if (solved || atLimit) {
+          // try_guess 現在每次都回完整 metadata,失敗也能顯示答案 + 解釋
           return {
             type: 'finished',
             colors: res.colors,
             solved,
-            // try_guess 只在 solved=true 時回 answer,失敗就是 null
             answer: res.answer || null,
+            zhName: res.zh_name || null,
+            zhDescription: res.zh_description || null,
+            enDescription: res.en_description || null,
             guessCount
           };
         }
@@ -120,14 +123,20 @@ function renderGuestEnd(result) {
   const guessCount = result.guessCount ?? 0;
   const mainLine = solved
     ? `🎉 第 ${guessCount} 次猜中!`
-    : `挑戰失敗`;
-  const answerLine = !solved && result.answer
-    ? `<p>答案是 <span class="answer">${escapeHtml(result.answer)}</span></p>`
-    : (!solved ? `<p class="text-muted">已用完 ${MAX_ATTEMPTS} 次機會</p>` : '');
+    : `未猜中(已用完 ${MAX_ATTEMPTS} 次機會)`;
+
+  const answerCard = result.answer ? `
+    <div class="answer-card">
+      <div class="answer-word">${escapeHtml(result.answer)}</div>
+      ${result.zhName ? `<div class="answer-zh-name">${escapeHtml(result.zhName)}</div>` : ''}
+      ${result.zhDescription ? `<p class="answer-desc">${escapeHtml(result.zhDescription)}</p>` : ''}
+      ${result.enDescription ? `<p class="answer-desc-en">${escapeHtml(result.enDescription)}</p>` : ''}
+    </div>
+  ` : '';
 
   return `
     <h2>${escapeHtml(mainLine)}</h2>
-    ${answerLine}
+    ${answerCard}
     <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
       <button type="button" class="btn" id="play-again">🎲 再來一題(隨機)</button>
       <a class="btn btn-secondary" href="#/">想參加排行榜?註冊</a>
