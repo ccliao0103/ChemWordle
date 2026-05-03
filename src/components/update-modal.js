@@ -17,6 +17,19 @@ const SEEN_KEY = 'chemwordle:updates_seen';
 // ── 更新清單(新的放最上面) ─────────────────
 const UPDATES = [
   {
+    version: '2026-04-30-dict-fix',
+    date: '4/30',
+    title: '🐛 Bug 修正:答案被判無效字',
+    body: `
+      <p>之前有少數題目的答案不在字典中,導致使用者打進<strong>正確答案</strong>反而被擋下「不是有效單字」,白白用掉次數。已全數修正,並加上自動同步機制,日後新題目不會再發生。</p>
+      <p class="update-note">
+        若你受到影響(成績不公),或之後遇到任何 bug、想反映建議,請來信:<br>
+        <a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)<br>
+        告訴我你的 email + 哪一天 + 什麼狀況,我可以手動幫你補分。
+      </p>
+    `
+  },
+  {
     version: '2026-04-30-rewards',
     date: '4/30',
     title: '🎁 獎勵辦法調整',

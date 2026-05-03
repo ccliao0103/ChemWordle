@@ -124,7 +124,7 @@ export async function render(container /* , params */) {
           <li>email 僅用於登入,不會外流,不會寄廣告信</li>
           <li>成績與猜測紀錄存於 Supabase,僅自己、教師、排行榜能看到(姓名+遮罩學號)</li>
           <li>訪客模式不記錄任何資料</li>
-          <li>問題回報:<code>noreply@ccllab-tw.com</code></li>
+          <li>問題回報 / Bug / 補分申請:<a href="mailto:165804@mail.fju.edu.tw"><code>165804@mail.fju.edu.tw</code></a>(廖振成)</li>
         </ul>
       </details>
     </section>
