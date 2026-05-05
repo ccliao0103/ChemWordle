@@ -73,6 +73,17 @@ export async function getAdminUserList(month = null) {
 }
 
 /**
+ * 取指定月份的「每日完成人數」(月曆熱圖用)。
+ * 回傳 { month_start, month_end, today, days: [{date, attempt_count, solved_count}] }
+ */
+export async function getAdminDailyAttendance(month = null) {
+  const params = month ? { target_month: month } : {};
+  const { data, error } = await getSupabase().rpc('get_admin_daily_attendance', params);
+  if (error) throw error;
+  return data;
+}
+
+/**
  * 取我的本月統計。
  * @param {string|null} month 'YYYY-MM-01',不傳 = 當月
  */
