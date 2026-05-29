@@ -17,6 +17,19 @@ const SEEN_KEY = 'chemwordle:updates_seen';
 // ── 更新清單(新的放最上面) ─────────────────
 const UPDATES = [
   {
+    version: '2026-05-29-award-ceremony',
+    date: '5/29',
+    title: '🏆 本月頒獎通知',
+    body: `
+      <p>感謝同學的參與!本月活動即將進入結算。</p>
+      <p>我們將於 <strong>6/3(三)下午 2 點</strong>,在 <strong>CH118</strong> 進行頒獎(包含<strong>全勤獎</strong>與<strong>參加獎</strong>)。</p>
+      <p class="update-note">
+        若當天無法前來,可以之後與我實驗室的同學領取。<br>
+        有任何問題請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
+      </p>
+    `
+  },
+  {
     version: '2026-04-30-dict-fix',
     date: '4/30',
     title: '🐛 Bug 修正:答案被判無效字',
