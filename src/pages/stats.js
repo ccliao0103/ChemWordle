@@ -9,7 +9,7 @@
 //   - 今日狀態徽章
 //   - 看排行榜按鈕
 
-import { getMyMonthlyStats } from '../api.js';
+import { getMyMonthlyStats, getMyMonthlyRewards } from '../api.js';
 import { createSpinner } from '../components/spinner.js';
 import { escapeHtml } from '../utils.js';
 
@@ -17,9 +17,16 @@ export async function render(container /* , params */) {
   container.innerHTML = '';
   container.appendChild(createSpinner('載入統計中…'));
 
-  let data;
+  let stats, rewards;
   try {
-    data = await getMyMonthlyStats();
+    [stats, rewards] = await Promise.all([
+      getMyMonthlyStats(),
+      // 獎勵試算失敗不要擋整頁 — 個別 catch 後傳 null
+      getMyMonthlyRewards().catch((e) => {
+        console.warn('[stats] getMyMonthlyRewards failed:', e);
+        return null;
+      })
+    ]);
   } catch (e) {
     console.error('[stats] getMyMonthlyStats failed:', e);
     container.innerHTML = `
@@ -32,10 +39,10 @@ export async function render(container /* , params */) {
     return;
   }
 
-  renderStats(container, data);
+  renderStats(container, stats, rewards);
 }
 
-function renderStats(container, d) {
+function renderStats(container, d, rewards) {
   const monthNum = monthNumberOf(d.month);
   const played = !!d.played_today;
   const attend = d.attend_days ?? 0;
@@ -73,6 +80,8 @@ function renderStats(container, d) {
         </div>
       </div>
 
+      ${renderRewardCard(rewards, monthNum)}
+
       <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
         ${played
           ? `<a class="btn btn-secondary" href="#/game">看今日結果</a>`
@@ -81,6 +90,43 @@ function renderStats(container, d) {
         <a class="btn btn-secondary" href="#/leaderboard">看排行榜</a>
       </div>
     </section>
+  `;
+}
+
+function renderRewardCard(r, monthNum) {
+  if (!r || r.error || (r.attend_days ?? 0) === 0) {
+    // 還沒玩過任何一題 → 不顯示獎勵卡片(避免空訊息煩人)
+    return '';
+  }
+
+  const parts = [];
+  if (r.full_attendance) {
+    parts.push(`<li>✅ <strong>全勤獎</strong>:出席滿 ${r.total_days} 天 → <strong>2 張</strong></li>`);
+  } else {
+    const needMore = r.total_days - r.attend_days;
+    parts.push(`<li>⬜ 全勤獎(出席滿 ${r.total_days} 天 → 2 張):還差 <strong>${needMore} 天</strong></li>`);
+  }
+  if (r.participation) {
+    parts.push(`<li>✅ <strong>參加獎</strong>:出席 ${r.attend_days} 天(≥ 20)→ <strong>1 張</strong></li>`);
+  } else {
+    const needMore = Math.max(0, 20 - r.attend_days);
+    parts.push(`<li>⬜ 參加獎(出席 ≥ 20 天 → 1 張):還差 <strong>${needMore} 天</strong></li>`);
+  }
+  if (r.top_rank === 1) {
+    parts.push(`<li>🥇 <strong>月排行第 1 名</strong> → <strong>10 張</strong></li>`);
+  } else if (r.top_rank === 2) {
+    parts.push(`<li>🥈 <strong>月排行第 2 名</strong> → <strong>6 張</strong></li>`);
+  } else if (r.top_rank === 3) {
+    parts.push(`<li>🥉 <strong>月排行第 3 名</strong> → <strong>4 張</strong></li>`);
+  }
+
+  return `
+    <div class="reward-card">
+      <div class="reward-card-title">🍦 ${monthNum} 月可領獎勵</div>
+      <div class="reward-total">目前可領 <strong>${r.total_coupons}</strong> 張霜淇淋券</div>
+      <ul class="reward-list">${parts.join('')}</ul>
+      <p class="reward-note">月底結算後確定。月排行 5/31 23:59 截止。</p>
+    </div>
   `;
 }
 

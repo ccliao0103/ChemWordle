@@ -95,6 +95,18 @@ export async function getMyMonthlyStats(month = null) {
 }
 
 /**
+ * 取我的個人月獎勵試算(霜淇淋券張數)。
+ * 回傳 { month, total_days, attend_days, solved_count, total_score,
+ *        full_attendance, participation, top_rank, rank_award, total_coupons }
+ */
+export async function getMyMonthlyRewards(month = null) {
+  const params = month ? { target_month: month } : {};
+  const { data, error } = await getSupabase().rpc('get_my_monthly_rewards', params);
+  if (error) throw error;
+  return data;
+}
+
+/**
  * 取月排行榜。
  * @param {string|null} month 'YYYY-MM-01',不傳 = 當月
  * @param {number} topN 前 N 名,預設 10
