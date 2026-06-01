@@ -112,12 +112,14 @@ function renderRewardCard(r, monthNum) {
     const needMore = Math.max(0, 20 - r.attend_days);
     parts.push(`<li>⬜ 參加獎(出席 ≥ 20 天 → 1 張):還差 <strong>${needMore} 天</strong></li>`);
   }
-  if (r.top_rank === 1) {
-    parts.push(`<li>🥇 <strong>月排行第 1 名</strong> → <strong>10 張</strong></li>`);
-  } else if (r.top_rank === 2) {
-    parts.push(`<li>🥈 <strong>月排行第 2 名</strong> → <strong>6 張</strong></li>`);
-  } else if (r.top_rank === 3) {
-    parts.push(`<li>🥉 <strong>月排行第 3 名</strong> → <strong>4 張</strong></li>`);
+  if (r.top_rank && r.top_rank >= 1 && r.top_rank <= 10 && r.rank_award > 0) {
+    const emoji = r.top_rank === 1 ? '🥇'
+                : r.top_rank === 2 ? '🥈'
+                : r.top_rank === 3 ? '🥉'
+                : '🏅';
+    parts.push(`<li>${emoji} <strong>月排行第 ${r.top_rank} 名</strong>(top 10)→ <strong>${r.rank_award} 張</strong></li>`);
+  } else if (r.top_rank && r.top_rank > 10) {
+    parts.push(`<li>⬜ 月排行第 ${r.top_rank} 名(未進 top 10)</li>`);
   }
 
   return `

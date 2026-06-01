@@ -2,17 +2,12 @@
 //
 // 觸發時機:
 //   1. main.js 啟動時呼叫 maybeShowUpdateModal()
-//   2. 若用戶是第一次進站(尚未看過 how-to),會自動把所有 update 標記已讀
-//      → 新手不會被「更新公告」干擾(那些對他們而言根本不算更新)
-//   3. 回訪者:列出所有「未讀」+「showAfter 已到」的更新,使用者關掉後標記已讀
-//
-// 我下一次要再公告新東西時:
-//   只要在下方 UPDATES 陣列的「最上方」加一個物件即可,version 用唯一字串
-//   (建議格式 'YYYY-MM-DD-shortname'),系統會自動偵測未讀版本並彈出。
+//   2. 第一次進站(未看過 how-to)→ markAllUpdatesSeen,不打擾新手
+//   3. 回訪者:列出所有「未讀」+「在 showAfter..showUntil 區間內」的更新
 //
 // 進階欄位:
 //   - showAfter: 'YYYY-MM-DD' (台灣時區),今天 < showAfter 時不彈
-//                (用來「先 deploy、到日子才自動曝光」)
+//   - showUntil: 'YYYY-MM-DD' (台灣時區),今天 >= showUntil 時不彈(過期)
 //   - body: string | async () => string
 //                若為 function,在彈出前才求值 — 可以視 auth 狀態 fetch 個人資料
 
@@ -22,17 +17,40 @@ import { getMyMonthlyRewards } from '../api.js';
 
 const SEEN_KEY = 'chemwordle:updates_seen';
 
+// 月排行獎品對照表(by Olympic rank,並列共享獎品)
+// 跟後端 SQL 的 v_award_table 對應
+const RANK_AWARD_TABLE = [10, 6, 6, 4, 3, 3, 2, 2, 1, 1];
+
 // ── 更新清單(新的放最上面) ─────────────────
 const UPDATES = [
+  {
+    version: '2026-05-29-rank-expansion',
+    date: '5/29',
+    title: '🎁 獎勵加碼:月排行擴大到 top 10!',
+    showUntil: '2026-06-01',  // 6/1 起改由「結算公告」接力,這則就退場
+    body: `
+      <p>原本月排行只發給前三名,本月起 <strong>top 10 都有獎</strong>!</p>
+      <ul class="update-list">
+        <li>🥇 1 → <strong>10 張</strong> &nbsp;/&nbsp; 🥈 2 → <strong>6 張</strong> &nbsp;/&nbsp; 🥉 3 → <strong>4 張</strong></li>
+        <li>4 → <strong>4 張</strong> &nbsp;/&nbsp; 5-6 → <strong>3 張</strong> &nbsp;/&nbsp; 7-8 → <strong>2 張</strong> &nbsp;/&nbsp; 9-10 → <strong>1 張</strong></li>
+      </ul>
+      <p class="update-note">
+        ※ 同分以「總分 → 答對次數 → 平均猜測」決勝,並列同名次共享同樣獎品。<br>
+        ※ <strong>5/31 23:59</strong> 截止,6/1 公布結算,<strong>6/3(三)14:00 於 CH118</strong> 領獎。<br>
+        ※ 想看自己目前能拿幾張?到 <a href="#/stats">我的成績</a> 看試算。
+      </p>
+    `
+  },
   {
     version: '2026-06-01-may-awards',
     date: '6/1',
     title: '🏆 5 月活動結算 + 領獎通知',
     showAfter: '2026-06-01',
+    showUntil: '2026-06-04',  // 6/4 起自動下架
     body: async () => {
       const baseHtml = `
         <p>5 月活動圓滿結束,感謝同學參與!</p>
-        <p>領獎時間:<strong>6/3(三)下午 2 點</strong>,地點:<strong>CH118</strong>(包含全勤獎 / 參加獎 / 月排行)。</p>
+        <p>領獎時間:<strong>6/3(三)下午 2 點</strong>,地點:<strong>CH118</strong>(包含全勤獎、參加獎、月排行 top 10)。</p>
         <p class="update-note">
           若當天無法前來,可以之後與我實驗室同學領取。<br>
           有問題請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
@@ -49,19 +67,6 @@ const UPDATES = [
       }
       return personalHtml + baseHtml;
     }
-  },
-  {
-    version: '2026-05-29-award-ceremony',
-    date: '5/29',
-    title: '🏆 本月頒獎通知',
-    body: `
-      <p>感謝同學的參與!本月活動即將進入結算。</p>
-      <p>我們將於 <strong>6/3(三)下午 2 點</strong>,在 <strong>CH118</strong> 進行頒獎(包含<strong>全勤獎</strong>與<strong>參加獎</strong>)。</p>
-      <p class="update-note">
-        若當天無法前來,可以之後與我實驗室的同學領取。<br>
-        有任何問題請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
-      </p>
-    `
   },
   {
     version: '2026-04-30-dict-fix',
@@ -86,7 +91,7 @@ const UPDATES = [
         <li><strong>新增「參加獎」</strong>:該月出席達 <strong>20 天(含)以上</strong> → 額外獲得 <strong>霜淇淋券 1 張</strong></li>
       </ul>
       <p class="update-note">
-        ※ 月排行(🥇10 / 🥈6 / 🥉4 張)維持不變。<br>
+        ※ 月排行維持不變。<br>
         ※ 這些獎勵可同時獲得,不擇優。例如全勤(出席 30 天)就能拿到 2 + 1 = 3 張。
       </p>
     `
@@ -114,7 +119,6 @@ function saveSeen(versions) {
 /** 台灣今天 'YYYY-MM-DD' */
 function twTodayStr() {
   const now = new Date();
-  // TW = UTC+8(無夏令時間)
   const tw = new Date(now.getTime() + (now.getTimezoneOffset() + 480) * 60000);
   const y = tw.getFullYear();
   const m = String(tw.getMonth() + 1).padStart(2, '0');
@@ -123,8 +127,10 @@ function twTodayStr() {
 }
 
 function isReady(update) {
-  if (!update.showAfter) return true;
-  return twTodayStr() >= update.showAfter;
+  const today = twTodayStr();
+  if (update.showAfter && today < update.showAfter) return false;
+  if (update.showUntil && today >= update.showUntil) return false;
+  return true;
 }
 
 function getUnseenUpdates() {
@@ -132,24 +138,14 @@ function getUnseenUpdates() {
   return UPDATES.filter(u => !seen.has(u.version) && isReady(u));
 }
 
-/**
- * 把「目前所有 UPDATES」標記成已讀(不彈窗)。
- * 第一次進站的新手用,讓他們不會看到歷史公告。
- * 注意:也會把「尚未到 showAfter」的 entry 標記已讀 — 對新手而言這是合理的
- * (他不需要看舊事件的公告;showAfter 的版本就也算「過去了」)。
- */
 export function markAllUpdatesSeen() {
   saveSeen(UPDATES.map(u => u.version));
 }
 
-/**
- * 啟動時呼叫:有未讀且到時間的就彈,沒就什麼也不做。
- */
 export async function maybeShowUpdateModal() {
   const unseen = getUnseenUpdates();
   if (unseen.length === 0) return;
 
-  // 求值所有 async body(可能會 fetch 個人資料)
   const resolved = await Promise.all(unseen.map(async u => ({
     ...u,
     bodyHtml: typeof u.body === 'function' ? await u.body() : u.body
@@ -161,8 +157,6 @@ export async function maybeShowUpdateModal() {
     closeText: '知道了'
   });
 
-  // 全部標記已讀(包含「沒準備好的」未來公告 — 之後當它們到 showAfter
-  // 也不會再彈了。如果想之後重彈,改 version 字串)
   saveSeen(UPDATES.map(u => u.version));
 }
 
@@ -181,7 +175,7 @@ function renderUpdatesHtml(updates) {
 }
 
 /**
- * 個人獎勵卡片 HTML(popup 與 /stats 頁共用,但保持獨立避免循環依賴)
+ * 個人獎勵卡片 HTML(popup 用)
  */
 function renderPersonalRewardsCard(r) {
   if (!r || r.error) return '';
@@ -196,12 +190,12 @@ function renderPersonalRewardsCard(r) {
   } else if (r.attend_days > 0) {
     parts.push(`<li>⬜ 參加獎:出席 ${r.attend_days} / 20 天(未達)</li>`);
   }
-  if (r.top_rank === 1) {
-    parts.push(`<li>🥇 <strong>月排行第 1 名</strong> → <strong>10 張</strong></li>`);
-  } else if (r.top_rank === 2) {
-    parts.push(`<li>🥈 <strong>月排行第 2 名</strong> → <strong>6 張</strong></li>`);
-  } else if (r.top_rank === 3) {
-    parts.push(`<li>🥉 <strong>月排行第 3 名</strong> → <strong>4 張</strong></li>`);
+  if (r.top_rank && r.top_rank >= 1 && r.top_rank <= 10 && r.rank_award > 0) {
+    const emoji = r.top_rank === 1 ? '🥇'
+                : r.top_rank === 2 ? '🥈'
+                : r.top_rank === 3 ? '🥉'
+                : '🏅';
+    parts.push(`<li>${emoji} <strong>月排行第 ${r.top_rank} 名</strong> → <strong>${r.rank_award} 張</strong></li>`);
   }
 
   if (parts.length === 0) {

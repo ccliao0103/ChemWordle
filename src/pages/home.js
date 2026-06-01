@@ -106,14 +106,13 @@ export async function render(container /* , params */) {
         <ul>
           <li><strong>全勤獎</strong>:該月每天都有提交紀錄(不論對錯)→ <strong>霜淇淋券 2 張</strong></li>
           <li><strong>參加獎</strong>:該月出席達 <strong>20 天</strong>(含)以上 → <strong>霜淇淋券 1 張</strong>(全勤者可同時獲得,共 3 張)</li>
-          <li><strong>月排行</strong>(每月結算):
+          <li><strong>月排行</strong>(每月結算,<strong>top 10 都有獎</strong>):
             <ul>
-              <li>🥇 第一名 → 霜淇淋券 <strong>10 張</strong></li>
-              <li>🥈 第二名 → 霜淇淋券 <strong>6 張</strong></li>
-              <li>🥉 第三名 → 霜淇淋券 <strong>4 張</strong></li>
+              <li>🥇 1 名 → <strong>10 張</strong> &nbsp;/&nbsp; 🥈 2 名 → <strong>6 張</strong> &nbsp;/&nbsp; 🥉 3 名 → <strong>4 張</strong></li>
+              <li>4 名 → <strong>4 張</strong> &nbsp;/&nbsp; 5-6 名 → <strong>3 張</strong> &nbsp;/&nbsp; 7-8 名 → <strong>2 張</strong> &nbsp;/&nbsp; 9-10 名 → <strong>1 張</strong></li>
             </ul>
           </li>
-          <li>同分比較順序:總分 → 答對次數 → 平均猜測次數</li>
+          <li>同分比較順序:總分 → 答對次數 → 平均猜測次數(並列同名次共享同樣獎品)</li>
           <li>排行榜以<strong>姓名 + 身分</strong>(如「化三甲」「碩士」「教職員」)顯示,不外露學號</li>
         </ul>
       </details>
