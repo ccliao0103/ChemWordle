@@ -5,7 +5,7 @@
 // - 月份切換 + 班級/身分篩選
 // - 安全:RPC 端檢查 students.role = 'admin',否則回 forbidden
 
-import { getAdminOverview, getAdminUserList, getAdminDailyAttendance } from '../api.js';
+import { getAdminOverview, getAdminUserList, getAdminDailyAttendance, getAdminAwardList } from '../api.js';
 import { createSpinner } from '../components/spinner.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml, formatMonthZh } from '../utils.js';
@@ -29,6 +29,7 @@ const _state = {
   overview: null,
   userList: null,
   dailyAttendance: null,
+  awardList: null,
   month: defaultMonth(),
   filter: 'all', // 'all' / '化一甲' / '化三乙' / '碩士班' / '博士班' / '教職員'
   container: null
@@ -38,18 +39,20 @@ export async function render(container /* , params */) {
   _state.container = container;
 
   // 第一次或月份變動 → 載入
-  if (!_state.userList || !_state.dailyAttendance) {
+  if (!_state.userList || !_state.dailyAttendance || !_state.awardList) {
     container.innerHTML = '';
     container.appendChild(createSpinner('載入後台中…'));
     try {
-      const [o, u, d] = await Promise.all([
+      const [o, u, d, a] = await Promise.all([
         getAdminOverview(),
         getAdminUserList(_state.month),
-        getAdminDailyAttendance(_state.month)
+        getAdminDailyAttendance(_state.month),
+        getAdminAwardList(_state.month)
       ]);
       _state.overview = o;
       _state.userList = u;
       _state.dailyAttendance = d;
+      _state.awardList = a;
     } catch (e) {
       console.error('[admin] load failed:', e);
       container.innerHTML = `
@@ -63,7 +66,7 @@ export async function render(container /* , params */) {
     }
   }
 
-  if (_state.overview?.error === 'forbidden' || _state.userList?.error === 'forbidden' || _state.dailyAttendance?.error === 'forbidden') {
+  if (_state.overview?.error === 'forbidden' || _state.userList?.error === 'forbidden' || _state.dailyAttendance?.error === 'forbidden' || _state.awardList?.error === 'forbidden') {
     container.innerHTML = `
       <section class="card text-center" style="margin:2rem auto;max-width:480px;">
         <h2>無權限</h2>
@@ -113,6 +116,8 @@ function renderDashboard() {
         <h3>每日使用人數(${escapeHtml(formatMonthZh(month))})</h3>
         ${renderAttendanceCalendar(_state.dailyAttendance)}
       </div>
+
+      ${renderAwardSection(_state.awardList, month)}
 
       <div class="admin-section">
         <h3>使用者列表</h3>
@@ -198,6 +203,7 @@ function renderDashboard() {
     _state.month = e.target.value;
     _state.userList = null;          // 標記要重抓
     _state.dailyAttendance = null;
+    _state.awardList = null;
     await render(container);
   });
 
@@ -217,11 +223,74 @@ function renderDashboard() {
     downloadCsv(`chemwordle-${month}${fileSuffix}.csv`, filteredUsers);
     showToast('CSV 已下載');
   });
+
+  // 領獎名單下載
+  const awardFullBtn = container.querySelector('#award-full-btn');
+  if (awardFullBtn) {
+    awardFullBtn.addEventListener('click', () => {
+      const rows = awardFullRows(_state.awardList);
+      if (rows.length === 0) {
+        showToast('本月沒有人有領獎資格', { type: 'info' });
+        return;
+      }
+      downloadCsv(`chemwordle-${month}-award-total.csv`, rows, AWARD_FULL_FIELDS);
+      showToast(`已下載總名單 ${rows.length} 人`);
+    });
+  }
+  const awardByClassBtn = container.querySelector('#award-byclass-btn');
+  if (awardByClassBtn) {
+    awardByClassBtn.addEventListener('click', () => {
+      const rows = awardByClassRows(_state.awardList);
+      if (rows.length === 0) {
+        showToast('排除前十名後沒有人(可能全部都在 top 10)', { type: 'info' });
+        return;
+      }
+      downloadCsv(`chemwordle-${month}-award-byclass.csv`, rows, AWARD_BYCLASS_FIELDS);
+      showToast(`已下載班別名單 ${rows.length} 人`);
+    });
+  }
 }
 
 function applyFilter(users, filter) {
   if (filter === 'all') return users;
   return users.filter((u) => u.class_name === filter);
+}
+
+// ─────────────────────────────────────────────
+// 領獎名單 section(2 個 CSV 下載按鈕)
+// ─────────────────────────────────────────────
+function renderAwardSection(awardList, month) {
+  const rows = awardList?.rows || [];
+  const fullCount = rows.length;
+  const byClassCount = rows.filter(r => !r.olympic_rank || r.olympic_rank > 10).length;
+  const sumCoupons = totalCoupons(rows);
+
+  // 統計各種類的人數
+  const fullAttendN = rows.filter(r => r.full_attendance).length;
+  const participationN = rows.filter(r => r.participation).length;
+  const topRankN = rows.filter(r => r.olympic_rank && r.olympic_rank <= 10).length;
+
+  return `
+    <div class="admin-section">
+      <h3>領獎名單(${escapeHtml(formatMonthZh(month))})</h3>
+      <p class="text-muted" style="font-size:0.8125rem;margin:0 0 0.5rem;">
+        ${fullCount} 人有領券 ·
+        全勤 ${fullAttendN} 人 · 參加 ${participationN} 人 · top 10 ${topRankN} 人 ·
+        <strong>共需準備 ${sumCoupons} 張霜淇淋券</strong>
+      </p>
+      <div class="admin-toolbar">
+        <button type="button" class="btn btn-secondary" id="award-full-btn">
+          📥 總名單 CSV(${fullCount} 人)
+        </button>
+        <button type="button" class="btn btn-secondary" id="award-byclass-btn">
+          📥 班別名單 CSV(排除前十,${byClassCount} 人)
+        </button>
+      </div>
+      <p class="text-muted" style="font-size:0.75rem;margin:0.5rem 0 0;">
+        ※ 結果跟著上面月份選單變。月底前統計都還可能變動,以結算後為準。
+      </p>
+    </div>
+  `;
 }
 
 // ─────────────────────────────────────────────
@@ -330,20 +399,21 @@ function renderMiniTable(headers, rows) {
   `;
 }
 
-function downloadCsv(filename, rows) {
-  const fields = [
-    ['name', '姓名'],
-    ['class_name', '班級'],
-    ['email', 'Email'],
-    ['student_id', '學號'],
-    ['role_category', '身分類別'],
-    ['total_score', '本月分數'],
-    ['attend_days', '出席天數'],
-    ['solved_count', '答對次數'],
-    ['failed_count', '答錯次數'],
-    ['avg_guess_count', '平均猜測次數'],
-    ['created_at', '註冊時間']
-  ];
+const USER_LIST_FIELDS = [
+  ['name', '姓名'],
+  ['class_name', '班級'],
+  ['email', 'Email'],
+  ['student_id', '學號'],
+  ['role_category', '身分類別'],
+  ['total_score', '本月分數'],
+  ['attend_days', '出席天數'],
+  ['solved_count', '答對次數'],
+  ['failed_count', '答錯次數'],
+  ['avg_guess_count', '平均猜測次數'],
+  ['created_at', '註冊時間']
+];
+
+function downloadCsv(filename, rows, fields = USER_LIST_FIELDS) {
   const headerLine = fields.map(([, label]) => label).join(',');
   const dataLines = rows.map(r => fields.map(([key]) => {
     const v = r[key] ?? '';
@@ -361,4 +431,67 @@ function downloadCsv(filename, rows) {
     URL.revokeObjectURL(url);
     a.remove();
   }, 100);
+}
+
+// ─────────────────────────────────────────────
+// 領獎名單下載(總名單 / 班別名單)
+// ─────────────────────────────────────────────
+const AWARD_FULL_FIELDS = [
+  ['rank_position', '#'],
+  ['name', '姓名'],
+  ['class_name', '班級'],
+  ['email', 'Email'],
+  ['attend_days', '出席'],
+  ['solved_count', '答對'],
+  ['total_score', '分數'],
+  ['full_attendance_mark', '全勤'],
+  ['participation_mark', '參加'],
+  ['month_rank_label', '月排'],
+  ['rank_award', '排名券'],
+  ['total_coupons', '共領']
+];
+
+const AWARD_BYCLASS_FIELDS = [
+  ['class_name', '班級'],
+  ['name', '姓名'],
+  ['email', 'Email'],
+  ['attend_days', '出席'],
+  ['solved_count', '答對'],
+  ['total_score', '分數'],
+  ['full_attendance_mark', '全勤'],
+  ['participation_mark', '參加'],
+  ['total_coupons', '共領']
+];
+
+function decorate(r, i) {
+  return {
+    ...r,
+    rank_position: i + 1,
+    full_attendance_mark: r.full_attendance ? '✓' : '',
+    participation_mark:   r.participation   ? '✓' : '',
+    month_rank_label:     (r.olympic_rank && r.olympic_rank <= 10) ? `第 ${r.olympic_rank} 名` : ''
+  };
+}
+
+function awardFullRows(awardList) {
+  // RPC 已經 order by total_coupons desc, total_score desc, name 所以直接展開
+  return (awardList?.rows || []).map(decorate);
+}
+
+function awardByClassRows(awardList) {
+  return (awardList?.rows || [])
+    .filter(r => !r.olympic_rank || r.olympic_rank > 10)
+    .sort((a, b) => {
+      const ca = a.class_name || '', cb = b.class_name || '';
+      if (ca < cb) return -1;
+      if (ca > cb) return 1;
+      if (b.total_score !== a.total_score) return b.total_score - a.total_score;
+      if (b.attend_days !== a.attend_days) return b.attend_days - a.attend_days;
+      return (a.name || '').localeCompare(b.name || '');
+    })
+    .map((r, i) => decorate(r, i));
+}
+
+function totalCoupons(rows) {
+  return rows.reduce((s, r) => s + (r.total_coupons || 0), 0);
 }

@@ -84,6 +84,19 @@ export async function getAdminDailyAttendance(month = null) {
 }
 
 /**
+ * 取指定月份的領獎名單(後台 CSV 下載用)。
+ * 回傳 { month_start, total_days, rows: [{name, class_name, email, attend_days,
+ *        solved_count, total_score, full_attendance, participation,
+ *        olympic_rank, rank_award, total_coupons}] }
+ */
+export async function getAdminAwardList(month = null) {
+  const params = month ? { target_month: month } : {};
+  const { data, error } = await getSupabase().rpc('get_admin_award_list', params);
+  if (error) throw error;
+  return data;
+}
+
+/**
  * 取我的本月統計。
  * @param {string|null} month 'YYYY-MM-01',不傳 = 當月
  */
