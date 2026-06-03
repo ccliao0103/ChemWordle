@@ -24,6 +24,20 @@ const RANK_AWARD_TABLE = [10, 6, 6, 4, 3, 3, 2, 2, 1, 1];
 // ── 更新清單(新的放最上面) ─────────────────
 const UPDATES = [
   {
+    version: '2026-05-31-certificate-pickup',
+    date: '5/31',
+    title: '🏅 補充公告:top 10 加發獎狀 + 補領地點',
+    showUntil: '2026-06-10',  // 留 1 週給沒能準時 6/3 來的人看
+    body: `
+      <p>除了霜淇淋券,本月 <strong>月排行 top 10</strong> 還會額外頒發 <strong>獎狀一張</strong>!</p>
+      <p>領獎時間:<strong>6/3(三)下午 2 點</strong>,地點:<strong>CH118</strong>。</p>
+      <p class="update-note">
+        ※ 6/3 當天若無法前來,可以之後到 <strong>CH207</strong> 找我領取(獎狀 + 霜淇淋券一起)。<br>
+        ※ 有問題請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
+      </p>
+    `
+  },
+  {
     version: '2026-05-29-rank-expansion',
     date: '5/29',
     title: '🎁 獎勵加碼:月排行擴大到 top 10!',
