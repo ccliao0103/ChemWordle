@@ -24,16 +24,16 @@ const RANK_AWARD_TABLE = [10, 6, 6, 4, 3, 3, 2, 2, 1, 1];
 // ── 更新清單(新的放最上面) ─────────────────
 const UPDATES = [
   {
-    version: '2026-05-31-certificate-pickup',
-    date: '5/31',
-    title: '🏅 補充公告:top 10 加發獎狀 + 補領地點',
-    showUntil: '2026-06-10',  // 留 1 週給沒能準時 6/3 來的人看
+    version: '2026-06-04-pending-pickup',
+    date: '6/4',
+    title: '🍦 還沒領獎品的同學請注意',
+    showUntil: '2026-06-30',  // 5 月活動結束前都還能補領
     body: `
-      <p>除了霜淇淋券,本月 <strong>月排行 top 10</strong> 還會額外頒發 <strong>獎狀一張</strong>!</p>
-      <p>領獎時間:<strong>6/3(三)下午 2 點</strong>,地點:<strong>CH118</strong>。</p>
+      <p>6/3 的頒獎已順利結束,但<strong>還有不少同學尚未來領取</strong>。</p>
+      <p>還沒領到霜淇淋券 / 獎狀的同學,請至 <strong>CH207</strong> 找我領取(平日上班時間,可以先用 email 約個時間)。</p>
       <p class="update-note">
-        ※ 6/3 當天若無法前來,可以之後到 <strong>CH207</strong> 找我領取(獎狀 + 霜淇淋券一起)。<br>
-        ※ 有問題請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
+        ※ 不確定自己有沒有領到獎?到 <a href="#/stats">我的成績</a> 看自己的試算。<br>
+        ※ 有問題或想預約時間請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
       </p>
     `
   },
