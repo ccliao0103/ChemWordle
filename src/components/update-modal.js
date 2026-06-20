@@ -24,6 +24,25 @@ const RANK_AWARD_TABLE = [10, 6, 6, 4, 3, 3, 2, 2, 1, 1];
 // ── 更新清單(新的放最上面) ─────────────────
 const UPDATES = [
   {
+    version: '2026-06-05-june-prize-voucher',
+    date: '6/5',
+    title: '🎁 6 月獎勵調整公告',
+    showUntil: '2026-07-01',  // 6 月活動結束前都顯示
+    body: `
+      <p>考量 5 月已有不少同學得獎、6 月很可能<strong>得獎人重複</strong>,怕大家手上霜淇淋券吃不完 🍦,<strong>6 月份月排行前 10 名改發禮券</strong>:</p>
+      <ul class="update-list">
+        <li>🥇 第 1 名 → <strong>400 元禮券</strong></li>
+        <li>第 2-5 名 → <strong>200 元禮券</strong></li>
+        <li>第 6-10 名 → <strong>100 元禮券</strong></li>
+      </ul>
+      <p class="update-note">
+        ※ <strong>全勤獎 + 參加獎維持原本霜淇淋券</strong>(全勤 2 張 / 參加 1 張),規則不變。<br>
+        ※ 6 月活動依然按月排行 top 10 給獎,只是把獎品從券改成禮券。<br>
+        ※ 有問題請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
+      </p>
+    `
+  },
+  {
     version: '2026-06-04-pending-pickup',
     date: '6/4',
     title: '🍦 還沒領獎品的同學請注意',
