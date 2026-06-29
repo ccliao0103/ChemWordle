@@ -8,6 +8,7 @@
 // 進階欄位:
 //   - showAfter: 'YYYY-MM-DD' (台灣時區),今天 < showAfter 時不彈
 //   - showUntil: 'YYYY-MM-DD' (台灣時區),今天 >= showUntil 時不彈(過期)
+//   - repeatDaily: true → 看過後隔天還會再彈(預設 false,只看一次)
 //   - body: string | async () => string
 //                若為 function,在彈出前才求值 — 可以視 auth 狀態 fetch 個人資料
 
@@ -23,6 +24,24 @@ const RANK_AWARD_TABLE = [10, 6, 6, 4, 3, 3, 2, 2, 1, 1];
 
 // ── 更新清單(新的放最上面) ─────────────────
 const UPDATES = [
+  {
+    version: '2026-06-15-end-of-activity-plan',
+    date: '6/15',
+    title: '📣 6 月結算 / 7 月維修 / 之後玩法',
+    showUntil: '2026-07-01',
+    repeatDaily: true,  // 每天重彈,確保大家都看到
+    body: `
+      <p>謝謝大家這兩個月的熱情參與!以下幾件事先跟大家說明:</p>
+      <ul class="update-list">
+        <li><strong>6 月結算</strong>:6 月活動結束後會統計完成,屆時會在這裡公告領獎時間(跟 5 月一樣)。</li>
+        <li><strong>7 月維修</strong>:7 月會暫停一段時間維修 + 擴充題庫,讓題目更豐富。</li>
+        <li><strong>之後上線</strong>:維修完之後<strong>不再有競賽性質</strong>(沒有月排行 / 獎勵),純粹當作每天花 1 分鐘練習化學英文單字的小工具,歡迎繼續玩!</li>
+      </ul>
+      <p class="update-note">
+        ※ 有問題請來信:<a href="mailto:165804@mail.fju.edu.tw"><strong>165804@mail.fju.edu.tw</strong></a>(廖振成)
+      </p>
+    `
+  },
   {
     version: '2026-06-05-june-prize-voucher',
     date: '6/5',
@@ -132,20 +151,35 @@ const UPDATES = [
 ];
 
 // ─── 工具 ────────────────────────────────
+//
+// localStorage 結構:
+//   { [version]: 'YYYY-MM-DD' }   - 該 version 最後一次被 dismiss 的台灣日期
+//   或舊版陣列:  ['v1', 'v2']     - 視為「永遠看過」(向下相容)
+//
+// 比對規則:
+//   - 一般 entry:有 key → seen(看過就不再彈)
+//   - repeatDaily: true:dismissedDate < today → 視為未看過(隔天重彈)
+
 function loadSeen() {
   try {
     const raw = localStorage.getItem(SEEN_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      // 舊格式:全部當「永遠看過」
+      const obj = {};
+      parsed.forEach(v => { obj[v] = '9999-12-31'; });
+      return obj;
+    }
+    return (parsed && typeof parsed === 'object') ? parsed : {};
   } catch {
-    return [];
+    return {};
   }
 }
 
-function saveSeen(versions) {
+function saveSeen(obj) {
   try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify(versions));
+    localStorage.setItem(SEEN_KEY, JSON.stringify(obj));
   } catch {}
 }
 
@@ -166,13 +200,24 @@ function isReady(update) {
   return true;
 }
 
+function isUnseen(update, seen, today) {
+  const dismissed = seen[update.version];
+  if (!dismissed) return true;            // 從未看過
+  if (update.repeatDaily && dismissed < today) return true;  // 看過但是昨天以前
+  return false;
+}
+
 function getUnseenUpdates() {
-  const seen = new Set(loadSeen());
-  return UPDATES.filter(u => !seen.has(u.version) && isReady(u));
+  const seen = loadSeen();
+  const today = twTodayStr();
+  return UPDATES.filter(u => isUnseen(u, seen, today) && isReady(u));
 }
 
 export function markAllUpdatesSeen() {
-  saveSeen(UPDATES.map(u => u.version));
+  const seen = loadSeen();
+  const today = twTodayStr();
+  UPDATES.forEach(u => { seen[u.version] = today; });
+  saveSeen(seen);
 }
 
 export async function maybeShowUpdateModal() {
@@ -190,7 +235,11 @@ export async function maybeShowUpdateModal() {
     closeText: '知道了'
   });
 
-  saveSeen(UPDATES.map(u => u.version));
+  // 把這次出現的全部標記為「今天看過」
+  const seen = loadSeen();
+  const today = twTodayStr();
+  unseen.forEach(u => { seen[u.version] = today; });
+  saveSeen(seen);
 }
 
 function renderUpdatesHtml(updates) {
