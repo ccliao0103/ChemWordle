@@ -258,41 +258,61 @@ function renderUpdatesHtml(updates) {
 
 /**
  * 個人獎勵卡片 HTML(popup 用)
+ * 支援雙幣別:霜淇淋券(全勤/參加/5 月月排行)+ 禮券(6 月月排行)
  */
 function renderPersonalRewardsCard(r) {
   if (!r || r.error) return '';
+  const monthNum = r.month ? parseInt(String(r.month).split('-')[1], 10) : null;
+  const monthLabel = monthNum ? `${monthNum} 月` : '本月';
+  const iceCount   = r.total_coupons ?? 0;
+  const voucherAmt = r.total_voucher ?? r.voucher_amount ?? 0;
+  const hasVoucher = voucherAmt > 0;
+
   const parts = [];
   if (r.full_attendance) {
-    parts.push(`<li>✅ <strong>全勤獎</strong>:出席滿 ${r.total_days} 天 → <strong>2 張</strong></li>`);
+    parts.push(`<li>✅ <strong>全勤獎</strong>:出席滿 ${r.total_days} 天 → <strong>霜淇淋券 2 張</strong></li>`);
   } else if (r.attend_days > 0) {
     parts.push(`<li>⬜ 全勤獎:出席 ${r.attend_days} / ${r.total_days} 天(未達)</li>`);
   }
   if (r.participation) {
-    parts.push(`<li>✅ <strong>參加獎</strong>:出席 ${r.attend_days} 天(≥ 20) → <strong>1 張</strong></li>`);
+    parts.push(`<li>✅ <strong>參加獎</strong>:出席 ${r.attend_days} 天(≥ 20) → <strong>霜淇淋券 1 張</strong></li>`);
   } else if (r.attend_days > 0) {
     parts.push(`<li>⬜ 參加獎:出席 ${r.attend_days} / 20 天(未達)</li>`);
   }
-  if (r.top_rank && r.top_rank >= 1 && r.top_rank <= 10 && r.rank_award > 0) {
+  if (r.top_rank && r.top_rank >= 1 && r.top_rank <= 10) {
     const emoji = r.top_rank === 1 ? '🥇'
                 : r.top_rank === 2 ? '🥈'
                 : r.top_rank === 3 ? '🥉'
                 : '🏅';
-    parts.push(`<li>${emoji} <strong>月排行第 ${r.top_rank} 名</strong> → <strong>${r.rank_award} 張</strong></li>`);
+    if (voucherAmt > 0) {
+      parts.push(`<li>${emoji} <strong>月排行第 ${r.top_rank} 名</strong> → <strong>禮券 ${voucherAmt} 元</strong></li>`);
+    } else if (r.rank_award > 0) {
+      parts.push(`<li>${emoji} <strong>月排行第 ${r.top_rank} 名</strong> → <strong>霜淇淋券 ${r.rank_award} 張</strong></li>`);
+    }
   }
 
   if (parts.length === 0) {
     return `
       <div class="reward-card">
-        <div class="reward-card-title">你的 5 月獎勵</div>
+        <div class="reward-card-title">你的 ${monthLabel}獎勵</div>
         <p class="text-muted" style="margin:0.25rem 0 0;">本月沒有提交紀錄,沒有獎勵 ☹️</p>
       </div>
     `;
   }
 
+  let totalLine;
+  if (hasVoucher && iceCount > 0) {
+    totalLine = `共 <strong>${iceCount}</strong> 張霜淇淋券 <span class="reward-plus">+</span> <strong>${voucherAmt}</strong> 元禮券`;
+  } else if (hasVoucher) {
+    totalLine = `共 <strong>${voucherAmt}</strong> 元禮券`;
+  } else {
+    totalLine = `共 <strong>${iceCount}</strong> 張霜淇淋券`;
+  }
+
   return `
     <div class="reward-card">
-      <div class="reward-card-title">🍦 你的 5 月可領獎勵</div>
-      <div class="reward-total">共 <strong>${r.total_coupons}</strong> 張霜淇淋券</div>
+      <div class="reward-card-title">🍦 你的 ${monthLabel}可領獎勵</div>
+      <div class="reward-total">${totalLine}</div>
       <ul class="reward-list">${parts.join('')}</ul>
     </div>
   `;
