@@ -59,7 +59,7 @@ select
   s.name                       as 姓名,
   s.class_name                 as 班級,
   s.email                      as Email,
-  t.attend_days                as 6月出席,
+  t.attend_days                as 出席,
   t.solved_count               as 答對,
   t.total_score                as 分數,
   case when t.full_attendance then '✓' else '' end                                  as 全勤,
