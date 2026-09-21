@@ -10,7 +10,61 @@
 --
 -- 用法:整段複製貼到 Supabase SQL Editor → Run。
 -- 注意:answer 會由既有 trigger 自動同步進 valid_words,不必另外處理。
+--
+-- 全部包在一個交易裡:任何一步失敗都會整個 rollback,不會留下半套資料。
+-- 開頭有防呆檢查,若有答案已存在於題庫會中止並列出是哪些字。
 -- ═══════════════════════════════════════════════════════════════════
+
+begin;
+
+
+-- ─── 防呆:若有任何答案已存在就中止 ───
+do $$
+declare v_dup text;
+begin
+  select string_agg(answer, ', ' order by answer) into v_dup
+  from public.daily_puzzles
+  where upper(answer) in (
+    'OCTANE', 'NONANE', 'DECANE', 'ALKANE', 'ALKYL', 'PROPYL', 'BUTYL', 'PENTYL',
+    'HEXYL', 'OCTYL', 'ALLYL', 'VINYL', 'ETHYL', 'ARENE', 'ALKOXY', 'ACETYL',
+    'FORMYL', 'BENZYL', 'PHENYL', 'NITRO', 'AMINO', 'THIOL', 'AZIDE', 'IMINE',
+    'ACETAL', 'SILANE', 'BORANE', 'TRIOL', 'XYLENE', 'CRESOL', 'FURAN', 'PURINE',
+    'DIMER', 'TRIMER', 'ACETIC', 'FORMIC', 'OXALIC', 'CITRIC', 'LACTIC', 'RIBOSE',
+    'XYLOSE', 'HEXOSE', 'STEROL', 'GLOBIN', 'PEPSIN', 'LIPASE', 'CODON', 'STARCH',
+    'PECTIN', 'CHITIN', 'LYSINE', 'SERINE', 'VALINE', 'NYLON', 'RAYON', 'RESIN',
+    'LATEX', 'FIBER', 'EPOXY', 'DOPANT', 'WAFER', 'SINTER', 'ANNEAL', 'ZIRCON',
+    'RUTILE', 'GARNET', 'GYPSUM', 'HALITE', 'PYRITE', 'BARIUM', 'CERIUM', 'CESIUM',
+    'INDIUM', 'RADIUM', 'RADON', 'OSMIUM', 'BOSON', 'QUARK', 'SIGMA', 'DELTA',
+    'ALPHA', 'GAMMA', 'LAMBDA', 'DECAY', 'HYBRID', 'REDOX', 'REFLUX', 'QUENCH',
+    'ELUTE', 'DECANT', 'FILTER', 'PURIFY', 'DIGEST', 'DISTIL', 'CRACK', 'REFORM',
+    'SALINE', 'BRINE', 'SLURRY', 'ALKALI', 'BORATE', 'MOLTEN', 'FROZEN', 'DENSE',
+    'INERT', 'BASIC', 'TOXIC', 'STABLE', 'PLANAR', 'LINEAR', 'PHASE', 'TRANS',
+    'ASSAY', 'BLANK', 'PURITY', 'NORMAL', 'PROBE', 'SENSOR', 'BEAKER', 'FLASK',
+    'BURNER', 'MORTAR', 'PESTLE', 'FUNNEL', 'PIPET', 'BURET', 'ANION', 'OCTET',
+    'NOBLE', 'GROUP', 'PERIOD', 'SHELL', 'ORBIT', 'MATTER', 'LEVEL', 'LEWIS',
+    'ANGLE', 'LENGTH', 'MOMENT', 'FERMI', 'FORMAL', 'BORIDE', 'BORAX', 'POTASH',
+    'CHALK', 'BRASS', 'BRONZE', 'SOLDER', 'LITMUS', 'DONOR', 'STRONG', 'EXCESS',
+    'LIMIT', 'ORDER', 'CHAIN', 'AGENT', 'JOULE', 'KELVIN', 'PASCAL', 'NEWTON',
+    'HERTZ', 'TESLA', 'DEBYE', 'GAUSS', 'FARAD', 'AMPERE', 'DEGREE', 'RAMAN',
+    'ABSORB', 'EXCITE', 'GROUND', 'SHIFT', 'FIELD', 'SIGNAL', 'NOISE', 'COLUMN',
+    'MATRIX', 'TORCH', 'SAMPLE', 'INJECT', 'DETECT', 'TRACE', 'DILUTE', 'STOCK',
+    'WEIGH', 'PLATE', 'CHARGE', 'PURGE', 'RINSE', 'SEPTUM', 'SPIKE', 'CURVE',
+    'SLOPE', 'RANGE', 'GIBBS', 'SYSTEM', 'STATE', 'CYCLE', 'FREEZE', 'TEMPER',
+    'IDEAL', 'FLUID', 'ACTIVE', 'ADSORB', 'DESORB', 'UPTAKE', 'POISON', 'BUBBLE',
+    'CUBIC', 'PLANE', 'FACET', 'GRAIN', 'DOMAIN', 'DEFECT', 'ORTHO', 'GLASSY',
+    'BLEND', 'CURING', 'MOULD', 'TOUGH', 'RIGID', 'CREEP', 'POLYOL', 'GLASS',
+    'STEEL', 'CEMENT', 'ENAMEL', 'LAYER', 'PELLET', 'POWDER', 'FLAKE', 'SHEET',
+    'CRUDE', 'DIESEL', 'PETROL', 'REFINE', 'OLEFIN', 'URACIL', 'HELIX', 'STRAND',
+    'GENOME', 'ACTIN', 'MYOSIN', 'LIGASE', 'KINASE', 'OLEIC', 'OLEATE', 'MOIETY',
+    'BRANCH', 'CYCLIC', 'MIXING', 'AGING', 'SETTLE', 'IMPURE', 'DIODE', 'WASTE',
+    'BIOGAS', 'SOLAR', 'SLUDGE', 'SEWAGE', 'LEACH', 'RUNOFF', 'BENIGN', 'RENEW',
+    'REUSE', 'TOXIN', 'HAZARD', 'SAFETY', 'EXPOSE', 'DOSAGE', 'INTAKE', 'SMOKE',
+    'DRYING'
+  );
+  if v_dup is not null then
+    raise exception '這些答案已存在於題庫,請先從候選 md 移除後重跑生成器:%', v_dup;
+  end if;
+end$$;
 
 
 -- ─── 每日題庫(233 題,佔位日期自 2026-07-05 起) ───
@@ -310,8 +364,10 @@ begin
   end loop;
 end$$;
 
+commit;
 
--- ─── 驗證 ───
+
+-- ─── 驗證(交易外,跑完看這個) ───
 select
   (select count(*) from public.daily_puzzles where is_guest_pool=false and is_active=true) as daily_active,
   (select count(*) from public.daily_puzzles where is_guest_pool=true  and is_active=true) as guest_active,

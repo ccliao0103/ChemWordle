@@ -138,7 +138,35 @@ lines.push(`-- 合計    :${all.length} 題`);
 lines.push('--');
 lines.push('-- 用法:整段複製貼到 Supabase SQL Editor → Run。');
 lines.push('-- 注意:answer 會由既有 trigger 自動同步進 valid_words,不必另外處理。');
+lines.push('--');
+lines.push('-- 全部包在一個交易裡:任何一步失敗都會整個 rollback,不會留下半套資料。');
+lines.push('-- 開頭有防呆檢查,若有答案已存在於題庫會中止並列出是哪些字。');
 lines.push('-- ═══════════════════════════════════════════════════════════════════');
+lines.push('');
+lines.push('begin;');
+lines.push('');
+lines.push('');
+
+// ── 防呆:答案重複檢查 ──
+lines.push('-- ─── 防呆:若有任何答案已存在就中止 ───');
+lines.push('do $$');
+lines.push('declare v_dup text;');
+lines.push('begin');
+lines.push('  select string_agg(answer, \', \' order by answer) into v_dup');
+lines.push('  from public.daily_puzzles');
+lines.push('  where upper(answer) in (');
+const allWords = all.map(r => q(r.word));
+// 每行 8 個字,避免行太長
+const wordLines = [];
+for (let i = 0; i < allWords.length; i += 8) {
+  wordLines.push('    ' + allWords.slice(i, i + 8).join(', '));
+}
+lines.push(wordLines.join(',\n'));
+lines.push('  );');
+lines.push('  if v_dup is not null then');
+lines.push('    raise exception \'這些答案已存在於題庫,請先從候選 md 移除後重跑生成器:%\', v_dup;');
+lines.push('  end if;');
+lines.push('end$$;');
 lines.push('');
 lines.push('');
 
@@ -179,10 +207,12 @@ lines.push('    perform public.shuffle_round_for_student(v_student.id);');
 lines.push('  end loop;');
 lines.push('end$$;');
 lines.push('');
+lines.push('commit;');
+lines.push('');
 lines.push('');
 
 // ── 驗證 ──
-lines.push('-- ─── 驗證 ───');
+lines.push('-- ─── 驗證(交易外,跑完看這個) ───');
 lines.push('select');
 lines.push('  (select count(*) from public.daily_puzzles where is_guest_pool=false and is_active=true) as daily_active,');
 lines.push('  (select count(*) from public.daily_puzzles where is_guest_pool=true  and is_active=true) as guest_active,');
