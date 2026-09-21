@@ -1,41 +1,22 @@
-// Page: 月排行榜 #/leaderboard
+// Page: 排行榜 #/leaderboard
 //
-// 進入呼叫 get_monthly_leaderboard(),拿:
-//   { month, top: [{rank, class_name, name, total_score, attend_days, solved_count, avg_guess_count}],
-//     my_rank: {rank, total_score, attend_days, solved_count} | null }
-// 顯示:
-//   - 月份選單(4 月試營運 / 5 月 / 6 月)→ 切換重新載入
-//   - 標題:「YYYY 年 M 月排行榜」
-//   - 「我的排名」突出區塊(my_rank 不為 null 時)
-//   - 前 10 名表格(顯示班別 tag 如「化三甲」)
-//   - 若我在前 10 名,該列加亮 (.is-me)
+// 兩個分頁:
+//   - 累積榜(預設):get_lifetime_leaderboard(),從 relaunch_date 起累積,
+//     排序為 答對 desc → 挑戰天數 desc → 平均猜測 asc
+//   - 歷史(2026 競賽期):get_monthly_leaderboard(),保留 4/5/6 月的舊月榜,
+//     讓當時得獎的同學還看得到自己的名字(見 DECISIONS.md #4)
 
-import { getMonthlyLeaderboard } from '../api.js';
+import { getLifetimeLeaderboard, getMonthlyLeaderboard } from '../api.js';
 import { createSpinner } from '../components/spinner.js';
 import { formatMonthZh, escapeHtml } from '../utils.js';
 
-const AVAILABLE_MONTHS = [
-  { value: '2026-04-01', label: '4 月(試營運)' },
-  { value: '2026-05-01', label: '5 月' },
-  { value: '2026-06-01', label: '6 月' }
+const HISTORY_MONTHS = [
+  { value: '2026-05-01', label: '2026 年 5 月' },
+  { value: '2026-06-01', label: '2026 年 6 月' }
 ];
 
-function defaultMonth() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth() + 1;
-  if (y === 2026) {
-    if (m <= 4) return '2026-04-01';
-    if (m === 5) return '2026-05-01';
-    if (m >= 6) return '2026-06-01';
-  }
-  // 活動結束後,預設停在 6 月
-  if (y > 2026) return '2026-06-01';
-  // 2026 之前(理論不會發生)
-  return '2026-05-01';
-}
-
-let _selectedMonth = defaultMonth();
+let _tab = 'lifetime';                       // 'lifetime' | 'history'
+let _historyMonth = HISTORY_MONTHS[1].value; // 預設看 6 月(競賽最後一個月)
 
 export async function render(container /* , params */) {
   await load(container);
@@ -47,9 +28,11 @@ async function load(container) {
 
   let data;
   try {
-    data = await getMonthlyLeaderboard(_selectedMonth);
+    data = _tab === 'lifetime'
+      ? await getLifetimeLeaderboard()
+      : await getMonthlyLeaderboard(_historyMonth);
   } catch (e) {
-    console.error('[leaderboard] getMonthlyLeaderboard failed:', e);
+    console.error('[leaderboard] load failed:', e);
     container.innerHTML = `
       <section class="card text-center" style="margin-top:2rem;">
         <h2>載入排行榜失敗</h2>
@@ -60,34 +43,20 @@ async function load(container) {
     return;
   }
 
-  renderLeaderboard(container, data);
-}
-
-function renderLeaderboard(container, d) {
-  const monthLabel = formatMonthZh(d.month);
-  const top = Array.isArray(d.top) ? d.top : [];
-  const myRank = d.my_rank;
-
   container.innerHTML = `
     <section>
-      <div class="leaderboard-header">
-        <h2 class="page-title" style="margin:0;">${escapeHtml(monthLabel)} 排行榜</h2>
-        <label class="month-picker">
-          月份:
-          <select id="lb-month-select">
-            ${AVAILABLE_MONTHS.map(m => `
-              <option value="${m.value}" ${m.value === _selectedMonth ? 'selected' : ''}>${m.label}</option>
-            `).join('')}
-          </select>
-        </label>
+      <h2 class="page-title">排行榜</h2>
+
+      <div class="tab-bar" role="tablist">
+        <button type="button" class="tab ${_tab === 'lifetime' ? 'is-active' : ''}"
+                data-tab="lifetime" role="tab">累積榜</button>
+        <button type="button" class="tab ${_tab === 'history' ? 'is-active' : ''}"
+                data-tab="history" role="tab">歷史(2026 競賽期)</button>
       </div>
 
-      ${renderMyRank(myRank)}
-
-      ${top.length === 0
-        ? `<div class="card text-center text-muted">本月還沒有人挑戰過,快去玩 <a href="#/game">今日題目</a>!</div>`
-        : renderTopTable(top, myRank)
-      }
+      <div id="lb-body">
+        ${_tab === 'lifetime' ? renderLifetime(data) : renderHistory(data)}
+      </div>
 
       <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
         <a class="btn btn-secondary" href="#/stats">看我的成績</a>
@@ -96,53 +65,128 @@ function renderLeaderboard(container, d) {
     </section>
   `;
 
-  // 月份切換 → 重新載入
-  const sel = container.querySelector('#lb-month-select');
+  container.querySelectorAll('.tab').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const next = btn.dataset.tab;
+      if (next === _tab) return;
+      _tab = next;
+      await load(container);
+    });
+  });
+
+  const sel = container.querySelector('#lb-history-month');
   if (sel) {
     sel.addEventListener('change', async (e) => {
-      _selectedMonth = e.target.value;
+      _historyMonth = e.target.value;
       await load(container);
     });
   }
 }
 
-function renderMyRank(my) {
-  if (!my) {
+// ─────────────────────────────────────────────
+// 累積榜
+// ─────────────────────────────────────────────
+function renderLifetime(d) {
+  const top = Array.isArray(d.top) ? d.top : [];
+  const me = d.my_rank;
+  const since = d.relaunch_date ? String(d.relaunch_date).replaceAll('-', ' / ') : '';
+
+  if (top.length === 0) {
     return `
-      <div class="card text-muted text-center" style="margin:1rem 0;">
-        你本月還沒有提交過任何挑戰,目前未列入排名。
+      <p class="lb-note">統計自 ${escapeHtml(since)} 起</p>
+      <div class="card text-center text-muted">
+        還沒有人挑戰過,你可以是第一個 — <a href="#/game">今日題目</a>
       </div>
     `;
   }
+
+  const myRankNum = me?.rank ?? null;
+  const rows = top.map((r) => `
+    <tr class="${myRankNum && r.rank === myRankNum ? 'is-me' : ''}">
+      <td>${r.rank}</td>
+      <td>${escapeHtml(r.name || '—')}</td>
+      <td><span class="class-tag">${escapeHtml(r.class_name || '—')}</span></td>
+      <td>${r.solved ?? 0}</td>
+      <td>${r.challenged ?? 0}</td>
+      <td>${r.accuracy != null ? escapeHtml(String(r.accuracy)) + '%' : '—'}</td>
+    </tr>
+  `).join('');
+
   return `
-    <div class="my-rank-card">
-      <div>
-        <div class="rank">你的排名:第 ${my.rank} 名</div>
-        <div class="detail">
-          ${my.total_score ?? 0} 分 · 出席 ${my.attend_days ?? 0} 天 · 答對 ${my.solved_count ?? 0} 次
+    <p class="lb-note">統計自 ${escapeHtml(since)} 起 · 依累積答對題數排序</p>
+
+    ${me ? `
+      <div class="my-rank-card">
+        <div>
+          <div class="rank">你的排名:第 ${me.rank} 名</div>
+          <div class="detail">
+            答對 ${me.solved ?? 0} 題 · 挑戰 ${me.challenged ?? 0} 天
+            ${me.accuracy != null ? ` · 命中率 ${escapeHtml(String(me.accuracy))}%` : ''}
+          </div>
         </div>
       </div>
-    </div>
+    ` : `
+      <div class="card text-muted text-center" style="margin:1rem 0;">
+        你還沒有挑戰紀錄,玩過就會出現在這裡。
+      </div>
+    `}
+
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th>排名</th>
+          <th>姓名</th>
+          <th>身分</th>
+          <th>答對</th>
+          <th>挑戰</th>
+          <th>命中率</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
   `;
 }
 
-function renderTopTable(top, myRank) {
-  const myRankNum = myRank?.rank ?? null;
-  const rows = top.map((row) => {
-    const isMe = myRankNum && row.rank === myRankNum;
-    return `
-      <tr class="${isMe ? 'is-me' : ''}">
-        <td>${row.rank}</td>
-        <td>${escapeHtml(row.name || '—')}</td>
-        <td><span class="class-tag">${escapeHtml(row.class_name || '—')}</span></td>
-        <td>${row.total_score ?? 0}</td>
-        <td>${row.attend_days ?? 0}</td>
-        <td>${row.solved_count ?? 0}</td>
-      </tr>
-    `;
-  }).join('');
+// ─────────────────────────────────────────────
+// 歷史月榜(2026 競賽期)
+// ─────────────────────────────────────────────
+function renderHistory(d) {
+  const top = Array.isArray(d.top) ? d.top : [];
+  const me = d.my_rank;
+  const myRankNum = me?.rank ?? null;
 
-  return `
+  const picker = `
+    <div class="leaderboard-header">
+      <p class="lb-note" style="margin:0;">
+        ${escapeHtml(formatMonthZh(d.month))} · 這是已結束的競賽期紀錄,僅供回顧
+      </p>
+      <label class="month-picker">
+        月份:
+        <select id="lb-history-month">
+          ${HISTORY_MONTHS.map(m => `
+            <option value="${m.value}" ${m.value === _historyMonth ? 'selected' : ''}>${m.label}</option>
+          `).join('')}
+        </select>
+      </label>
+    </div>
+  `;
+
+  if (top.length === 0) {
+    return picker + `<div class="card text-center text-muted">這個月沒有紀錄。</div>`;
+  }
+
+  const rows = top.map((r) => `
+    <tr class="${myRankNum && r.rank === myRankNum ? 'is-me' : ''}">
+      <td>${r.rank}</td>
+      <td>${escapeHtml(r.name || '—')}</td>
+      <td><span class="class-tag">${escapeHtml(r.class_name || '—')}</span></td>
+      <td>${r.total_score ?? 0}</td>
+      <td>${r.attend_days ?? 0}</td>
+      <td>${r.solved_count ?? 0}</td>
+    </tr>
+  `).join('');
+
+  return picker + `
     <table class="rank-table">
       <thead>
         <tr>

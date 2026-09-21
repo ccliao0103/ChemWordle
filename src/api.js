@@ -84,37 +84,25 @@ export async function getAdminDailyAttendance(month = null) {
 }
 
 /**
- * 取指定月份的領獎名單(後台 CSV 下載用)。
- * 回傳 { month_start, total_days, rows: [{name, class_name, email, attend_days,
- *        solved_count, total_score, full_attendance, participation,
- *        olympic_rank, rank_award, total_coupons}] }
+ * 取我的累積統計(常駐練習模式)。只算 relaunch_date 之後的紀錄。
+ * 回傳 { relaunch_date, challenged, solved, accuracy, streak, best_streak,
+ *        last_played, played_today }
+ *
+ * streak 允許中間缺 1 天;缺 2 天以上歸零(見 DECISIONS.md #3)。
  */
-export async function getAdminAwardList(month = null) {
-  const params = month ? { target_month: month } : {};
-  const { data, error } = await getSupabase().rpc('get_admin_award_list', params);
+export async function getMyLifetimeStats() {
+  const { data, error } = await getSupabase().rpc('get_my_lifetime_stats');
   if (error) throw error;
   return data;
 }
 
 /**
- * 取我的本月統計。
- * @param {string|null} month 'YYYY-MM-01',不傳 = 當月
+ * 取永久累積排行榜。只算 relaunch_date 之後的紀錄。
+ * 回傳 { relaunch_date, top: [{rank, name, class_name, solved, challenged, accuracy}],
+ *        my_rank: {rank, solved, challenged, accuracy} | null }
  */
-export async function getMyMonthlyStats(month = null) {
-  const params = month ? { target_month: month } : {};
-  const { data, error } = await getSupabase().rpc('get_my_monthly_stats', params);
-  if (error) throw error;
-  return data;
-}
-
-/**
- * 取我的個人月獎勵試算(霜淇淋券張數)。
- * 回傳 { month, total_days, attend_days, solved_count, total_score,
- *        full_attendance, participation, top_rank, rank_award, total_coupons }
- */
-export async function getMyMonthlyRewards(month = null) {
-  const params = month ? { target_month: month } : {};
-  const { data, error } = await getSupabase().rpc('get_my_monthly_rewards', params);
+export async function getLifetimeLeaderboard(topN = 20) {
+  const { data, error } = await getSupabase().rpc('get_lifetime_leaderboard', { top_n: topN });
   if (error) throw error;
   return data;
 }

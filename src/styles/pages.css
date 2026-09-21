@@ -129,42 +129,78 @@
   margin-left: 0.25rem;
 }
 
-/* ── 個人月獎勵卡片(stats 頁 + popup 共用樣式) ─── */
-.reward-card {
-  background: linear-gradient(135deg, #FFF9E6 0%, #FFE9B0 100%);
-  border: 1px solid var(--color-present);
+/* ── 連續挑戰天數卡片(stats 頁) ─────────── */
+.streak-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: linear-gradient(135deg, #FFF4E0 0%, #FFE0B8 100%);
+  border: 1px solid #F5B301;
   border-radius: 10px;
-  padding: 1rem 1.1rem;
+  padding: 1rem 1.15rem;
   margin: 1rem 0;
 }
-.reward-card-title {
-  font-size: 0.875rem;
+.streak-card.streak-broken {
+  background: linear-gradient(135deg, #F3F7F1 0%, #E4EFE0 100%);
+  border-color: var(--color-correct);
+}
+.streak-flame {
+  font-size: 2.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.streak-num {
+  font-size: 1.375rem;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: 0.02em;
+  line-height: 1.2;
 }
-.reward-total {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0.25rem 0 0.75rem;
-}
-.reward-total strong {
+.streak-num strong {
   font-size: 2rem;
   color: #c8741a;
-  margin: 0 0.15rem;
+  margin: 0 0.1rem;
 }
-.reward-list {
-  margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.9375rem;
-  line-height: 1.65;
-}
-.reward-list li { margin: 0.1rem 0; }
-.reward-note {
-  margin: 0.5rem 0 0;
-  font-size: 0.75rem;
+.streak-card.streak-broken .streak-num {
+  font-size: 1.125rem;
   color: var(--text-secondary);
+}
+.streak-sub {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+  line-height: 1.5;
+}
+
+/* ── 排行榜分頁(累積榜 / 歷史) ──────────── */
+.tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--border);
+  margin: 0.75rem 0 1rem;
+}
+.tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 0.5rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+}
+.tab:hover { background: #f5f5f5; color: var(--text); }
+.tab.is-active {
+  color: var(--text);
+  font-weight: 700;
+  border-bottom-color: var(--color-correct);
+}
+.lb-note {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem;
 }
 
 /* 排行榜:標題 + 月份選單 */
@@ -221,13 +257,6 @@
   font-family: inherit;
   font-size: 0.875rem;
   background: var(--bg);
-}
-
-/* reward-total 中的「+」 */
-.reward-plus {
-  margin: 0 0.35rem;
-  color: var(--text-secondary);
-  font-weight: 400;
 }
 
 /* 排行榜:我的獨立區塊 */

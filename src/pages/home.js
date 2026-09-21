@@ -1,43 +1,11 @@
 // Page: 首頁 #/
 //
+// 常駐練習模式(2026-09 起,競賽期已結束):
 // - Logo + 系統名稱 + 一句說明
-// - 動態活動狀態 banner(搶先體驗中 / 進行中 / 已結束 — 依今天日期自動切)
 // - 三個大按鈕:註冊 / 登入 / 訪客體驗
 // - 遊戲規則與使用須知(摺疊)
 
 import { isAuthenticated } from '../auth.js';
-
-// 活動期間設定(台灣時區錨定)
-const EVENT_START = new Date('2026-05-01T00:00:00+08:00');
-const EVENT_END = new Date('2026-07-01T00:00:00+08:00'); // 6/30 23:59 之後
-
-function renderEventStatus() {
-  const now = new Date();
-  if (now < EVENT_START) {
-    return `
-      <div class="event-banner pre-launch">
-        <span class="event-badge">⚡ 搶先體驗中</span>
-        <p class="event-period-line">正式開賽:<strong>2026 / 5 / 1</strong> — 2026 / 6 / 30</p>
-        <p class="event-hint">現在註冊就能玩!熟悉玩法 + 鍵盤手感,等 5/1 開賽就直接拚分數。</p>
-      </div>
-    `;
-  }
-  if (now < EVENT_END) {
-    return `
-      <div class="event-banner active">
-        <span class="event-badge">🔥 活動進行中</span>
-        <p class="event-period-line">2026 / 5 / 1 — <strong>2026 / 6 / 30</strong></p>
-      </div>
-    `;
-  }
-  return `
-    <div class="event-banner finished">
-      <span class="event-badge">🏁 活動已結束</span>
-      <p class="event-period-line">2026 / 5 / 1 — 2026 / 6 / 30</p>
-      <p class="event-hint">感謝參與!查看最終結果:<a href="#/leaderboard">排行榜</a></p>
-    </div>
-  `;
-}
 
 export async function render(container /* , params */) {
   const authed = await isAuthenticated();
@@ -45,8 +13,14 @@ export async function render(container /* , params */) {
   container.innerHTML = `
     <div class="home-hero">
       <h1>ChemWordle</h1>
-      <p>每天為你客製一題化學英文 Wordle</p>
-      ${renderEventStatus()}
+      <p>每天一題化學英文單字,花 1 分鐘記一個字</p>
+      <div class="event-banner active">
+        <span class="event-badge">📚 每日練習</span>
+        <p class="event-hint">
+          沒有競賽、沒有獎勵 — 純粹累積自己的紀錄。
+          題庫 300+ 題,每人題序不同。
+        </p>
+      </div>
     </div>
 
     <div class="home-cta">
@@ -75,9 +49,20 @@ export async function render(container /* , params */) {
           <li><strong>每人題目不同</strong>:系統幫每位學生洗一份專屬題序,跟同學「對答案」沒用 😉</li>
           <li>顏色說明:<span class="chip chip-green">綠</span> 字母位置正確、<span class="chip chip-yellow">黃</span> 字母存在但位置錯、<span class="chip chip-gray">灰</span> 字母不存在</li>
           <li>必須是有效英文單字,亂打(如 XZQPWL)會被擋下,但<strong>不扣次數</strong></li>
-          <li>計分:1/2/3/4/5/6 次猜中分別得 100/90/80/70/60/50 分;猜錯 0 分</li>
           <li>台灣時間每天 00:00 換新題;<strong>缺席當天的題就跳過</strong>(不能補玩)</li>
           <li>玩完當下立刻顯示答案 + 中英文解釋(每人題目不同,不怕外洩)</li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>紀錄怎麼算</summary>
+        <ul>
+          <li><strong>沒有競賽、沒有獎勵</strong> — 這是練習工具,紀錄純粹是給自己看的</li>
+          <li><strong>連續天數</strong>:每天有提交就延續。<strong>允許中間缺 1 天</strong>,缺 2 天才歸零</li>
+          <li><strong>累積答對</strong>:你到目前為止學會幾個化學英文單字</li>
+          <li>排行榜依<strong>累積答對題數</strong>排序,來得勤比猜得準更重要</li>
+          <li>排行榜以<strong>姓名 + 身分</strong>(如「化三甲」「碩士班」)顯示,不外露學號</li>
+          <li>2026 年 5–6 月的競賽期舊榜保留在排行榜的「歷史」分頁</li>
         </ul>
       </details>
 
@@ -98,22 +83,6 @@ export async function render(container /* , params */) {
           </li>
           <li>換電腦 / 換瀏覽器 / 清掉 cookies → 需要重新收信登入</li>
           <li>⚠️ <strong>若網頁無回應</strong>:按 <strong>F5</strong>(電腦)或下拉重新整理(手機)就會恢復</li>
-        </ul>
-      </details>
-
-      <details>
-        <summary>評分與獎勵 🍦</summary>
-        <ul>
-          <li><strong>全勤獎</strong>:該月每天都有提交紀錄(不論對錯)→ <strong>霜淇淋券 2 張</strong></li>
-          <li><strong>參加獎</strong>:該月出席達 <strong>20 天</strong>(含)以上 → <strong>霜淇淋券 1 張</strong>(全勤者可同時獲得,共 3 張)</li>
-          <li><strong>月排行</strong>(每月結算,<strong>top 10 都有獎</strong>):
-            <ul>
-              <li>🥇 1 名 → <strong>10 張</strong> &nbsp;/&nbsp; 🥈 2 名 → <strong>6 張</strong> &nbsp;/&nbsp; 🥉 3 名 → <strong>4 張</strong></li>
-              <li>4 名 → <strong>4 張</strong> &nbsp;/&nbsp; 5-6 名 → <strong>3 張</strong> &nbsp;/&nbsp; 7-8 名 → <strong>2 張</strong> &nbsp;/&nbsp; 9-10 名 → <strong>1 張</strong></li>
-            </ul>
-          </li>
-          <li>同分比較順序:總分 → 答對次數 → 平均猜測次數(並列同名次共享同樣獎品)</li>
-          <li>排行榜以<strong>姓名 + 身分</strong>(如「化三甲」「碩士」「教職員」)顯示,不外露學號</li>
         </ul>
       </details>
 
