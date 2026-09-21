@@ -26,7 +26,8 @@ const SEED_FILES = [
   'scripts/seed-daily-puzzles.sql',
   'scripts/seed-finale-week.sql',
   'scripts/rpc-guest-pool-and-en.sql',
-  'scripts/batch3-incorporate.sql'
+  'scripts/batch3-incorporate.sql',
+  'scripts/seed-batch4-5.sql'
 ];
 const existing = new Set();
 for (const f of SEED_FILES) {
