@@ -65,3 +65,18 @@ streak 數值顯示「實際有玩的天數」,不是日曆跨度。
 
 **影響範圍**:`daily_puzzles` 表;`valid_words` 由既有 trigger 自動同步;
 訪客池(`is_guest_pool=true`)獨立擴充至 60–80 題。
+
+---
+
+## #6 — 2026-09-21 — 不綁 custom domain,維持 chemwordle-a5p.pages.dev
+
+**決策**:雖然 `ccllab-tw.com` 的 DNS 已在 Cloudflare 管理、綁 `chemwordle.ccllab-tw.com`
+技術上可行,但決定維持原網址不動。
+
+**原因**:這站有 Magic Link 登入,換網域不是純 DNS 的事,要依序做四步(掛 domain →
+建 CNAME → Supabase Redirect URLs 加新網址 → 改 Pages 環境變數 `SITE_URL` 觸發重建),
+順序錯會讓所有人登不進去。而且 session 存在 localStorage 綁 origin,換網域後所有人
+在新網址都要重新收一次 Magic Link。效益(網址好看一點)不值得這些風險與操作成本。
+
+**影響範圍**:`SITE_URL` 環境變數、Supabase Auth URL Configuration 都維持現狀。
+未來若要重啟這件事,照上述四步順序做,且不要跟其他變更同時進行。
