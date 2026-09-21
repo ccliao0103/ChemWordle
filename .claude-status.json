@@ -1,0 +1,22 @@
+{
+  "project": "ChemWordle(化學英文 Wordle)",
+  "phase": "轉型中:競賽活動 → 常駐練習工具",
+  "progress": 40,
+  "current_task": "Phase 3(題庫擴充)已完成入庫,準備進 Phase 1+2(拆競賽機制 + 做 streak/永久榜)",
+  "next_steps": [
+    "Phase 1 拆競賽機制:月排行獎 RPC、/stats reward card、home.js 評分與獎勵區塊、活動已結束 banner、update-modal 的 8 則競賽公告",
+    "Phase 2 新機制:建 app_config 表存 relaunch_date;新 RPC get_my_lifetime_stats(streak 寬容 1 天 + 累積挑戰/答對/命中率)與 get_lifetime_leaderboard;改寫 /stats 與 /leaderboard(舊 5/6 月榜移到歷史 tab)",
+    "Phase 1+2 完工後與使用者敲定「重新上線日」,寫進 app_config",
+    "上線日發一則 popup 公告轉型(無競賽、純練習)",
+    "可選:再出 batch6 題庫"
+  ],
+  "waiting_for": {
+    "type": "user",
+    "detail": "重新上線日尚未決定(依約定等 Phase 1-3 全部完工後再定)"
+  },
+  "risk": "low",
+  "owner": "self",
+  "collaborators": [],
+  "deliverable_target": "2026-10 重新上線為常駐練習工具",
+  "notes": "線上產品 chemwordle-a5p.pages.dev,⚠ Git push 即部署。註冊 169 人(6 月實際領獎僅 16 人,約 150 人註冊後未持續遊玩)。題庫 2026-09-21 擴充完成:每日 305 題 + 訪客池 66 題,字典 23874;以每天 1 題計約 1 年不重複。決策見 DECISIONS.md #1-#5。"
+}
